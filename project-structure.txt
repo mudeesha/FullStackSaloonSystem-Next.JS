@@ -1,0 +1,163 @@
+.
+├── app
+│   ├── about
+│   │   └── page.tsx
+│   ├── admin
+│   │   ├── appointments
+│   │   │   └── page.tsx
+│   │   ├── availability
+│   │   │   └── page.tsx
+│   │   ├── dashboard
+│   │   │   └── page.tsx
+│   │   ├── layout.tsx
+│   │   ├── payments
+│   │   │   └── page.tsx
+│   │   ├── products
+│   │   │   └── page.tsx
+│   │   ├── reviews
+│   │   │   └── page.tsx
+│   │   ├── services
+│   │   │   └── page.tsx
+│   │   └── users
+│   │       └── page.tsx
+│   ├── book
+│   │   └── page.tsx
+│   ├── contact
+│   │   └── page.tsx
+│   ├── dashboard
+│   │   ├── appointments
+│   │   │   └── page.tsx
+│   │   ├── history
+│   │   │   └── page.tsx
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   └── profile
+│   │       └── page.tsx
+│   ├── globals.css
+│   ├── layout.tsx
+│   ├── login
+│   │   └── page.tsx
+│   ├── page.tsx
+│   ├── products
+│   │   └── page.tsx
+│   ├── register
+│   │   └── page.tsx
+│   ├── services
+│   │   └── page.tsx
+│   └── staff
+│       ├── appointments
+│       │   └── page.tsx
+│       ├── availability
+│       │   └── page.tsx
+│       ├── dashboard
+│       │   └── page.tsx
+│       ├── layout.tsx
+│       └── profile
+│           └── page.tsx
+├── components
+│   ├── confirmation-modal.tsx
+│   ├── footer.tsx
+│   ├── form-modal.tsx
+│   ├── header.tsx
+│   ├── image-upload.tsx
+│   ├── layout
+│   │   └── public-layout.tsx
+│   ├── product-detail-modal.tsx
+│   ├── theme-provider.tsx
+│   ├── theme-toggle.tsx
+│   └── ui
+│       ├── accordion.tsx
+│       ├── alert-dialog.tsx
+│       ├── alert.tsx
+│       ├── aspect-ratio.tsx
+│       ├── avatar.tsx
+│       ├── badge.tsx
+│       ├── breadcrumb.tsx
+│       ├── button-group.tsx
+│       ├── button.tsx
+│       ├── calendar.tsx
+│       ├── card.tsx
+│       ├── carousel.tsx
+│       ├── chart.tsx
+│       ├── checkbox.tsx
+│       ├── collapsible.tsx
+│       ├── command.tsx
+│       ├── context-menu.tsx
+│       ├── dialog.tsx
+│       ├── drawer.tsx
+│       ├── dropdown-menu.tsx
+│       ├── empty.tsx
+│       ├── field.tsx
+│       ├── form.tsx
+│       ├── hover-card.tsx
+│       ├── input-group.tsx
+│       ├── input-otp.tsx
+│       ├── input.tsx
+│       ├── item.tsx
+│       ├── kbd.tsx
+│       ├── label.tsx
+│       ├── menubar.tsx
+│       ├── navigation-menu.tsx
+│       ├── pagination.tsx
+│       ├── popover.tsx
+│       ├── progress.tsx
+│       ├── radio-group.tsx
+│       ├── resizable.tsx
+│       ├── scroll-area.tsx
+│       ├── select.tsx
+│       ├── separator.tsx
+│       ├── sheet.tsx
+│       ├── sidebar.tsx
+│       ├── skeleton.tsx
+│       ├── slider.tsx
+│       ├── sonner.tsx
+│       ├── spinner.tsx
+│       ├── switch.tsx
+│       ├── table.tsx
+│       ├── tabs.tsx
+│       ├── textarea.tsx
+│       ├── toaster.tsx
+│       ├── toast.tsx
+│       ├── toggle-group.tsx
+│       ├── toggle.tsx
+│       ├── tooltip.tsx
+│       ├── use-mobile.tsx
+│       └── use-toast.ts
+├── components.json
+├── hooks
+│   ├── use-mobile.ts
+│   └── use-toast.ts
+├── lib
+│   ├── mock-data.ts
+│   └── utils.ts
+├── next.config.mjs
+├── package.json
+├── package-lock.json
+├── pnpm-lock.yaml
+├── postcss.config.mjs
+├── project-structure.txt
+├── public
+│   ├── images
+│   │   ├── hero-banner.jpg
+│   │   ├── service-haircut.jpg
+│   │   ├── service-massage.jpg
+│   │   ├── service-nails.jpg
+│   │   ├── team-member-1.jpg
+│   │   ├── team-member-2.jpg
+│   │   ├── team-member-3.jpg
+│   │   └── team-member-4.jpg
+│   ├── placeholder.jpg
+│   ├── placeholder-logo.png
+│   ├── placeholder-logo.svg
+│   ├── placeholder.svg
+│   ├── placeholder-user.jpg
+│   ├── professional-woman-esthetician.jpg
+│   ├── professional-woman-massage-therapist.jpg
+│   ├── professional-woman-nail-technician.jpg
+│   ├── professional-woman-stylist.jpg
+│   └── profile-photo.jpg
+├── styles
+│   └── globals.css
+└── tsconfig.json
+
+35 directories, 126 files
