@@ -4,7 +4,6 @@ import { PublicLayout } from "@/components/layout/public-layout"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { services } from "@/lib/mock-data"
 import { Clock, DollarSign } from "lucide-react"
 import Image from "next/image"
 

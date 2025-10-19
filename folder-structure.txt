@@ -20,6 +20,16 @@
 │   │   │   └── page.tsx
 │   │   └── users
 │   │       └── page.tsx
+│   ├── api
+│   │   ├── auth
+│   │   │   ├── login
+│   │   │   │   └── route.ts
+│   │   │   ├── logout
+│   │   │   │   └── route.ts
+│   │   │   └── register
+│   │   │       └── route.ts
+│   │   └── services
+│   │       └── route.ts
 │   ├── book
 │   │   └── page.tsx
 │   ├── contact
@@ -124,18 +134,31 @@
 │       ├── use-mobile.tsx
 │       └── use-toast.ts
 ├── components.json
+├── .env
+├── folder-structure.txt
+├── .gitignore
 ├── hooks
 │   ├── use-mobile.ts
 │   └── use-toast.ts
 ├── lib
+│   ├── auth-edge.ts
+│   ├── auth-node.ts
 │   ├── mock-data.ts
+│   ├── prisma.ts
 │   └── utils.ts
+├── middleware.ts
 ├── next.config.mjs
+├── next-env.d.ts
 ├── package.json
 ├── package-lock.json
 ├── pnpm-lock.yaml
 ├── postcss.config.mjs
-├── project-structure.txt
+├── prisma
+│   ├── migrations
+│   │   ├── 20251018174115_init_basic_tables
+│   │   │   └── migration.sql
+│   │   └── migration_lock.toml
+│   └── schema.prisma
 ├── public
 │   ├── images
 │   │   ├── hero-banner.jpg
@@ -156,8 +179,9 @@
 │   ├── professional-woman-nail-technician.jpg
 │   ├── professional-woman-stylist.jpg
 │   └── profile-photo.jpg
+├── README.md
 ├── styles
 │   └── globals.css
 └── tsconfig.json
 
-35 directories, 126 files
+44 directories, 141 files
