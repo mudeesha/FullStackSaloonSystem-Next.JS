@@ -5,24 +5,23 @@ import { writeFile } from "fs/promises"
 import path from "path"
 import { v4 as uuidv4 } from "uuid"
 
-export async function GET(request) {
+export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const page = Number(searchParams.get("page")) || 1;
-    const limit = Number(searchParams.get("limit")) || 9;
-    const search = searchParams.get("search") || "";
+    const { searchParams } = new URL(request.url)
+    const page = Number(searchParams.get("page")) || 1
+    const limit = Number(searchParams.get("limit")) || 9
+    const search = searchParams.get("search") || ""
 
-    const skip = (page - 1) * limit;
+    const skip = (page - 1) * limit
 
-    // Build where clause manually
     const where = search
       ? {
           OR: [
-            { name: { contains: search } },
-            { description: { contains: search } },
+            { name: { contains: search, mode: "insensitive" } },
+            { description: { contains: search, mode: "insensitive" } },
           ],
         }
-      : {};
+      : {}
 
     const [services, total] = await Promise.all([
       prisma.service.findMany({
@@ -30,9 +29,21 @@ export async function GET(request) {
         skip,
         take: limit,
         orderBy: { id: "desc" },
+        include: {
+          staff: {
+            include: {
+              staff: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          }
+        },
       }),
       prisma.service.count({ where }),
-    ]);
+    ])
 
     return NextResponse.json({
       data: services,
@@ -42,16 +53,15 @@ export async function GET(request) {
         limit,
         totalPages: Math.ceil(total / limit),
       },
-    });
+    })
   } catch (error) {
-    console.error("Error fetching services:", error);
+    console.error("Error fetching services:", error)
     return NextResponse.json(
       { error: "Failed to fetch services" },
       { status: 500 }
-    );
+    )
   }
 }
-
 
 export async function POST(request: Request) {
   try {
@@ -62,6 +72,15 @@ export async function POST(request: Request) {
     const price = formData.get("price") as string
     const durationMinutes = formData.get("durationMinutes") as string
     const imageFile = formData.get("image") as File | null
+    const staffIds = formData.getAll("staffIds") as string[]
+
+    // Validation
+    if (!name || !price || !durationMinutes) {
+      return NextResponse.json(
+        { error: "Name, price, and duration are required" },
+        { status: 400 }
+      )
+    }
 
     let imagePath = null
 
@@ -74,8 +93,7 @@ export async function POST(request: Request) {
       const uniqueName = `${uuidv4()}-${imageFile.name}`
       const uploadDir = path.join(process.cwd(), "public/uploads/services")
       
-      // Ensure upload directory exists (you might want to create it manually first)
-      // For now, we'll create it if it doesn't exist
+      // Ensure upload directory exists
       const fs = await import("fs")
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true })
@@ -87,6 +105,7 @@ export async function POST(request: Request) {
       imagePath = `/uploads/services/${uniqueName}`
     }
 
+    // Create service with staff assignments
     const newService = await prisma.service.create({
       data: {
         name,
@@ -94,12 +113,33 @@ export async function POST(request: Request) {
         price: parseFloat(price),
         durationMinutes: parseInt(durationMinutes),
         image: imagePath,
+        staff: {
+          create: staffIds.map(staffId => ({
+            staffId: parseInt(staffId)
+          }))
+        }
       },
+      include: {
+        staff: {
+          include: {
+            staff: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        }
+      }
     })
+
     return NextResponse.json(newService)
   } catch (error) {
     console.error("Error creating service:", error)
-    return NextResponse.json({ error: "Failed to create service" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Failed to create service" },
+      { status: 500 }
+    )
   }
 }
 
@@ -113,11 +153,29 @@ export async function PUT(request: Request) {
     const price = formData.get("price") as string
     const durationMinutes = formData.get("durationMinutes") as string
     const imageFile = formData.get("image") as File | null
+    const staffIds = formData.getAll("staffIds") as string[]
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Service ID is required" },
+        { status: 400 }
+      )
+    }
 
     // Get current service to handle image updates
     const currentService = await prisma.service.findUnique({
-      where: { id: Number(id) }
+      where: { id: Number(id) },
+      include: {
+        staff: true
+      }
     })
+
+    if (!currentService) {
+      return NextResponse.json(
+        { error: "Service not found" },
+        { status: 404 }
+      )
+    }
 
     let imagePath = currentService?.image || null
 
@@ -151,6 +209,7 @@ export async function PUT(request: Request) {
       }
     }
 
+    // Update service with staff assignments
     const updated = await prisma.service.update({
       where: { id: Number(id) },
       data: {
@@ -159,12 +218,34 @@ export async function PUT(request: Request) {
         price: parseFloat(price),
         durationMinutes: parseInt(durationMinutes),
         image: imagePath,
+        staff: {
+          deleteMany: {}, // Remove existing staff assignments
+          create: staffIds.map(staffId => ({
+            staffId: parseInt(staffId)
+          }))
+        }
       },
+      include: {
+        staff: {
+          include: {
+            staff: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        }
+      }
     })
+
     return NextResponse.json(updated)
   } catch (error) {
     console.error("Error updating service:", error)
-    return NextResponse.json({ error: "Failed to update service" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Failed to update service" },
+      { status: 500 }
+    )
   }
 }
 
@@ -172,13 +253,32 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get("id")
-    if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 })
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: "Service ID is required" },
+        { status: 400 }
+      )
+    }
     
     // Get service to delete associated image
     const service = await prisma.service.findUnique({
       where: { id: Number(id) }
     })
     
+    if (!service) {
+      return NextResponse.json(
+        { error: "Service not found" },
+        { status: 404 }
+      )
+    }
+    
+    // Delete staff assignments first (due to foreign key constraints)
+    await prisma.staffService.deleteMany({
+      where: { serviceId: Number(id) }
+    })
+    
+    // Delete the service
     await prisma.service.delete({ where: { id: Number(id) } })
     
     // Delete associated image file
@@ -192,9 +292,12 @@ export async function DELETE(request: Request) {
       }
     }
     
-    return NextResponse.json({ message: "Service deleted" })
+    return NextResponse.json({ message: "Service deleted successfully" })
   } catch (error) {
     console.error("Error deleting service:", error)
-    return NextResponse.json({ error: "Failed to delete service" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Failed to delete service" },
+      { status: 500 }
+    )
   }
 }

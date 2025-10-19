@@ -1,3 +1,4 @@
+// app/admin/services/page.tsx
 "use client"
 
 import { Button } from "@/components/ui/button"
@@ -10,7 +11,15 @@ import { ConfirmationModal } from "@/components/confirmation-modal"
 import { FormModal } from "@/components/form-modal"
 import { SearchBar } from "@/components/search-bar"
 
-// Update your Service type
+type StaffService = {
+  id: number
+  staffId: number
+  staff: {
+    id: number
+    name: string
+  }
+}
+
 type Service = {
   id: number
   name: string
@@ -18,11 +27,18 @@ type Service = {
   price: number
   durationMinutes: number
   image?: string | null
+  staff: StaffService[]
+}
+
+type StaffMember = {
+  id: number
+  name: string
 }
 
 export default function AdminServicesPage() {
   const { toast } = useToast()
   const [serviceList, setServiceList] = useState<Service[]>([])
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([])
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; id: number }>({ open: false, id: 0 })
   const [formModal, setFormModal] = useState<{ open: boolean; type: "add" | "edit"; id?: number }>({
     open: false,
@@ -35,8 +51,9 @@ export default function AdminServicesPage() {
     duration: "",
     image: null as File | null 
   })
+  const [selectedStaff, setSelectedStaff] = useState<number[]>([])
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [limit, setLimit] = useState(9);
+  const [limit, setLimit] = useState(9)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [searchTerm, setSearchTerm] = useState("")
@@ -44,7 +61,7 @@ export default function AdminServicesPage() {
   // Fetch services from API
   const fetchServices = async (page = 1, search = "") => {
     try {
-      const res = await fetch(`/api/services?page=${page}&limit=${limit}&search=${search}`);
+      const res = await fetch(`/api/services?page=${page}&limit=${limit}&search=${search}`)
       const data = await res.json()
       setServiceList(data.data)
       setTotalPages(data.pagination.totalPages)
@@ -53,6 +70,20 @@ export default function AdminServicesPage() {
       toast({ title: "Error", description: "Failed to fetch services." })
     }
   }
+
+  // Fetch staff members for dropdown
+  useEffect(() => {
+    const fetchStaffMembers = async () => {
+      try {
+        const res = await fetch('/api/users?role=STAFF')
+        const data = await res.json()
+        setStaffMembers(data)
+      } catch (error) {
+        console.error("Failed to fetch staff members", error)
+      }
+    }
+    fetchStaffMembers()
+  }, [])
 
   const handleSearch = (value: string) => {
     setSearchTerm(value)
@@ -96,6 +127,7 @@ export default function AdminServicesPage() {
   const handleOpenAddForm = () => {
     setFormData({ name: "", description: "", price: "", duration: "", image: null })
     setImagePreview(null)
+    setSelectedStaff([])
     setFormModal({ open: true, type: "add" })
   }
 
@@ -109,6 +141,7 @@ export default function AdminServicesPage() {
       image: null
     })
     setImagePreview(service.image || null)
+    setSelectedStaff(service.staff.map(staffService => staffService.staffId))
     setFormModal({ open: true, type: "edit", id: service.id })
   }
 
@@ -119,6 +152,11 @@ export default function AdminServicesPage() {
     formDataToSend.append("description", formData.description)
     formDataToSend.append("price", formData.price)
     formDataToSend.append("durationMinutes", formData.duration)
+    
+    // Append staff IDs as array
+    selectedStaff.forEach(staffId => {
+      formDataToSend.append("staffIds", staffId.toString())
+    })
     
     if (formData.image) {
       formDataToSend.append("image", formData.image)
@@ -160,20 +198,6 @@ export default function AdminServicesPage() {
           <p className="text-muted-foreground">Manage salon services</p>
         </div>
         <div className="flex items-center gap-4">
-
-        {/* customize number of a itim in a page */}
-        {/* <select
-          value={limit}
-          onChange={(e) => {
-            setLimit(Number(e.target.value));
-            fetchServices(1, searchTerm, Number(e.target.value)); // reset to first page
-          }}
-          className="border rounded px-2 py-1"
-        >
-          <option value={6}>6</option>
-          <option value={12}>12</option>
-          <option value={24}>24</option>
-        </select> */}
           <SearchBar onSearch={(value) => handleSearch(value)} />
           <Button onClick={handleOpenAddForm}>
             <Plus className="w-4 h-4 mr-2" />
@@ -226,6 +250,24 @@ export default function AdminServicesPage() {
                 </p>
               </div>
 
+              {/* Assigned Staff */}
+              <div className="px-4 mt-2">
+                <p className="text-xs text-muted-foreground mb-1">Assigned Staff:</p>
+                <div className="flex flex-wrap gap-1">
+                  {service.staff.map((staffService) => (
+                    <span 
+                      key={staffService.id}
+                      className="inline-block bg-primary/10 text-primary text-xs px-2 py-1 rounded-full"
+                    >
+                      {staffService.staff.name}
+                    </span>
+                  ))}
+                  {service.staff.length === 0 && (
+                    <span className="text-xs text-muted-foreground italic">No staff assigned</span>
+                  )}
+                </div>
+              </div>
+
               {/* Bottom Buttons */}
               <div className="flex justify-end gap-2 mt-5 border-t pt-4 px-4 pb-4">
                 <Button
@@ -250,6 +292,7 @@ export default function AdminServicesPage() {
         ))}
       </div>
 
+      {/* Pagination */}
       <div className="flex justify-center items-center gap-2 mt-8">
         <Button
           variant="outline"
@@ -332,6 +375,7 @@ export default function AdminServicesPage() {
               placeholder="e.g., Hair Cut"
             />
           </div>
+          
           <div>
             <label className="block text-sm font-medium mb-2">Description</label>
             <Textarea
@@ -341,9 +385,10 @@ export default function AdminServicesPage() {
               rows={3}
             />
           </div>
+          
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Price ($)</label>
+              <label className="block text-sm font-medium mb-2">Price (Rs)</label>
               <Input
                 type="number"
                 value={formData.price}
@@ -360,6 +405,41 @@ export default function AdminServicesPage() {
                 placeholder="30"
               />
             </div>
+          </div>
+
+          {/* Staff Assignment */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Assigned Staff</label>
+            <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+              {staffMembers.map((staff) => (
+                <div key={staff.id} className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id={`staff-${staff.id}`}
+                    checked={selectedStaff.includes(staff.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedStaff([...selectedStaff, staff.id])
+                      } else {
+                        setSelectedStaff(selectedStaff.filter(id => id !== staff.id))
+                      }
+                    }}
+                    className="rounded border-gray-300"
+                  />
+                  <label htmlFor={`staff-${staff.id}`} className="text-sm">
+                    {staff.name}
+                  </label>
+                </div>
+              ))}
+              {staffMembers.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-2">
+                  No staff members found
+                </p>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Select staff members who can perform this service
+            </p>
           </div>
         </div>
       </FormModal>
