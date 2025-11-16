@@ -1,4 +1,4 @@
-// app/book/page.tsx
+// app/book/BookPageContent.tsx
 "use client"
 
 import { PublicLayout } from "@/components/layout/public-layout"
@@ -63,7 +63,7 @@ type User = {
   phone?: string
 }
 
-export default function BookPage() {
+export default function BookPageContent() {
   const { toast } = useToast()
   const searchParams = useSearchParams()
   const serviceId = searchParams.get('service')
