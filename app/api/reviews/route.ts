@@ -8,54 +8,93 @@ function formatReview(review: {
   rating: number
   comment: string | null
   createdAt: Date
-  appointment: { customer: { name: string } }
+  appointment: {
+    customer: { name: string }
+    staff: { name: string }
+    services: { service: { name: string } }[]
+  }
 }) {
+  const serviceName =
+    review.appointment.services.map((s) => s.service.name).join(", ") || "Service"
+
   return {
     id: review.id,
     appointmentId: review.appointmentId,
     clientName: review.appointment.customer.name,
+    staffName: review.appointment.staff.name,
+    serviceName,
     rating: review.rating,
     comment: review.comment ?? "",
     date: review.createdAt.toISOString().split("T")[0],
   }
 }
 
+const reviewInclude = {
+  appointment: {
+    include: {
+      customer: { select: { name: true } },
+      staff: { select: { name: true } },
+      services: { include: { service: { select: { name: true } } } },
+    },
+  },
+} as const
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const publicOnly = searchParams.get("public") === "true"
+    const search = (searchParams.get("search") || "").trim().toLowerCase()
+    const staffOnly = searchParams.get("staff") === "true"
 
     if (!publicOnly) {
-      const auth = await requireSession(["ADMIN"])
+      const auth = await requireSession(["ADMIN", "STAFF"])
       if (!auth.session) {
         return NextResponse.json({ error: auth.error }, { status: auth.status })
       }
+
+      const where =
+        staffOnly && auth.session.role === "STAFF"
+          ? { appointment: { staffId: auth.session.id } }
+          : {}
+
+      const reviews = await prisma.review.findMany({
+        where,
+        include: reviewInclude,
+        orderBy: { createdAt: "desc" },
+      })
+
+      let data = reviews.map(formatReview)
+
+      if (search) {
+        data = data.filter(
+          (r) =>
+            r.clientName.toLowerCase().includes(search) ||
+            r.staffName.toLowerCase().includes(search) ||
+            r.serviceName.toLowerCase().includes(search) ||
+            r.comment.toLowerCase().includes(search) ||
+            String(r.rating).includes(search),
+        )
+      }
+
+      return NextResponse.json({ data })
     }
 
     const reviews = await prisma.review.findMany({
-      include: {
-        appointment: {
-          include: { customer: { select: { name: true } } },
-        },
-      },
+      include: reviewInclude,
       orderBy: { createdAt: "desc" },
-      take: publicOnly ? 6 : undefined,
+      take: 6,
     })
 
     const data = reviews.map(formatReview)
 
-    if (publicOnly) {
-      return NextResponse.json({
-        data: data.map((r) => ({
-          id: r.id,
-          name: r.clientName,
-          text: r.comment || "Great experience!",
-          rating: r.rating,
-        })),
-      })
-    }
-
-    return NextResponse.json({ data })
+    return NextResponse.json({
+      data: data.map((r) => ({
+        id: r.id,
+        name: r.clientName,
+        text: r.comment || "Great experience!",
+        rating: r.rating,
+      })),
+    })
   } catch (error) {
     console.error("Error fetching reviews:", error)
     return NextResponse.json({ error: "Failed to fetch reviews" }, { status: 500 })
@@ -107,9 +146,7 @@ export async function POST(request: Request) {
         rating: ratingNum,
         comment: comment || null,
       },
-      include: {
-        appointment: { include: { customer: { select: { name: true } } } },
-      },
+      include: reviewInclude,
     })
 
     return NextResponse.json(formatReview(review), { status: 201 })

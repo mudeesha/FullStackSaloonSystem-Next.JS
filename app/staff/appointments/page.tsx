@@ -21,17 +21,30 @@ type Appointment = {
 export default function StaffAppointmentsPage() {
   const { toast } = useToast()
   const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [loading, setLoading] = useState(true)
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; type: "complete" | "cancel"; id: number }>({
     open: false,
     type: "complete",
     id: 0,
   })
 
-  const fetchAppointments = () => {
-    fetch("/api/appointments")
-      .then((res) => res.json())
-      .then((data) => setAppointments(data.data ?? []))
-      .catch(console.error)
+  const fetchAppointments = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch("/api/appointments", { credentials: "include" })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed to load")
+      setAppointments(data.data ?? [])
+    } catch (e) {
+      toast({
+        title: "Error",
+        description: e instanceof Error ? e.message : "Failed to load appointments",
+        variant: "destructive",
+      })
+      setAppointments([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -43,105 +56,112 @@ export default function StaffAppointmentsPage() {
       const res = await fetch("/api/appointments", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ id, status }),
       })
-      if (!res.ok) throw new Error("Failed")
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed")
       fetchAppointments()
       toast({
         title: status === "completed" ? "Appointment Completed" : "Appointment Cancelled",
         description: `Appointment marked as ${status}.`,
       })
-    } catch {
-      toast({ title: "Error", description: "Failed to update appointment.", variant: "destructive" })
+    } catch (e) {
+      toast({
+        title: "Error",
+        description: e instanceof Error ? e.message : "Failed to update appointment.",
+        variant: "destructive",
+      })
     }
     setConfirmModal({ open: false, type: "complete", id: 0 })
   }
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.2 } },
-  }
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-  }
-
   return (
-    <div className="space-y-6">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-        <h2 className="text-3xl font-bold mb-2">Appointments</h2>
-        <p className="text-muted-foreground">Manage your appointments</p>
-      </motion.div>
+    <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <div>
+        <h2 className="mb-2 text-3xl font-bold">Appointments</h2>
+        <p className="text-muted-foreground">Manage appointments assigned to you</p>
+      </div>
 
-      <motion.div className="space-y-4" variants={containerVariants} initial="hidden" animate="visible">
-        {appointments.map((appointment) => (
-          <motion.div
-            key={appointment.id}
-            className="p-6 rounded-lg border bg-card hover:shadow-lg transition-shadow"
-            variants={itemVariants}
-          >
-            <motion.div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-4 mb-2">
-                  <h3 className="text-lg font-semibold">{appointment.serviceName}</h3>
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${
-                      appointment.status === "confirmed"
-                        ? "bg-blue-100 text-blue-800"
-                        : appointment.status === "completed"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
-                    }`}
-                  >
-                    {appointment.status}
-                  </span>
+      {loading ? (
+        <p className="py-8 text-center text-muted-foreground">Loading appointments...</p>
+      ) : appointments.length === 0 ? (
+        <div className="rounded-lg border bg-card p-8 text-center text-muted-foreground">
+          No appointments assigned to you yet.
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {appointments.map((appointment) => (
+            <motion.div
+              key={appointment.id}
+              className="rounded-lg border bg-card p-6 transition-shadow hover:shadow-lg"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="flex-1">
+                  <motion.div className="mb-2 flex flex-wrap items-center gap-4">
+                    <h3 className="text-lg font-semibold">{appointment.serviceName}</h3>
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
+                        appointment.status === "confirmed"
+                          ? "bg-blue-100 text-blue-800"
+                          : appointment.status === "completed"
+                            ? "bg-green-100 text-green-800"
+                            : appointment.status === "cancelled"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
+                      {appointment.status}
+                    </span>
+                  </motion.div>
+                  <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground md:grid-cols-4">
+                    <div>
+                      <p className="font-medium text-foreground">Date & Time</p>
+                      <p>
+                        {appointment.date} at {appointment.time}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">Client</p>
+                      <p>{appointment.clientName}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">Email</p>
+                      <p>{appointment.clientEmail}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">Phone</p>
+                      <p>{appointment.clientPhone || "—"}</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
-                  <div>
-                    <p className="font-medium text-foreground">Date & Time</p>
-                    <p>
-                      {appointment.date} at {appointment.time}
-                    </p>
+                {(appointment.status === "confirmed" || appointment.status === "pending") && (
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => setConfirmModal({ open: true, type: "complete", id: appointment.id })}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <CheckCircle className="mr-1 h-4 w-4" />
+                      Complete
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => setConfirmModal({ open: true, type: "cancel", id: appointment.id })}
+                    >
+                      <X className="mr-1 h-4 w-4" />
+                      Cancel
+                    </Button>
                   </div>
-                  <div>
-                    <p className="font-medium text-foreground">Client</p>
-                    <p>{appointment.clientName}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">Email</p>
-                    <p>{appointment.clientEmail}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">Phone</p>
-                    <p>{appointment.clientPhone || "—"}</p>
-                  </div>
-                </div>
+                )}
               </div>
-              {(appointment.status === "confirmed" || appointment.status === "pending") && (
-                <div className="flex gap-2 ml-4">
-                  <Button
-                    size="sm"
-                    onClick={() => setConfirmModal({ open: true, type: "complete", id: appointment.id })}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    <CheckCircle className="w-4 h-4 mr-1" />
-                    Complete
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => setConfirmModal({ open: true, type: "cancel", id: appointment.id })}
-                  >
-                    <X className="w-4 h-4 mr-1" />
-                    Cancel
-                  </Button>
-                </div>
-              )}
             </motion.div>
-          </motion.div>
-        ))}
-      </motion.div>
+          ))}
+        </div>
+      )}
 
       <ConfirmationModal
         open={confirmModal.open}
@@ -160,6 +180,6 @@ export default function StaffAppointmentsPage() {
         }
         onCancel={() => setConfirmModal({ open: false, type: "complete", id: 0 })}
       />
-    </div>
+    </motion.div>
   )
 }

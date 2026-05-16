@@ -8,6 +8,7 @@ import { Star } from "lucide-react"
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import { ProductDetailModal } from "@/components/product-detail-modal"
+import { getServiceImageUrl } from "@/lib/image-url"
 
 type FeaturedService = {
   id: number
@@ -108,9 +109,9 @@ export default function Home() {
         <div className="absolute inset-0 opacity-10">
           <Image src="/images/hero-banner.jpg" alt="Salon hero" fill className="object-cover" priority />
         </div>
-        <div className="container px-4 relative z-10">
+        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
-            className="max-w-3xl mx-auto text-center"
+            className="mx-auto max-w-3xl text-center"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -133,9 +134,9 @@ export default function Home() {
 
       {/* Featured Services */}
       <section className="py-16 md:py-24">
-        <div className="container px-4">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
-            className="text-center mb-12"
+            className="mb-12 text-center"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -148,26 +149,46 @@ export default function Home() {
           </motion.div>
 
           <motion.div
-            className="grid grid-cols-1 md:grid-cols-3 gap-6"
+            className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
           >
-            {featuredServices.map((service) => (
-              <motion.div
-                key={service.id}
-                className="p-6 rounded-lg border border-secondary bg-card hover:shadow-lg transition-shadow dark:border-secondary/30"
-                variants={itemVariants}
-              >
-                <h3 className="text-xl font-semibold mb-2">{service.name}</h3>
-                <p className="text-muted-foreground mb-4">{service.description}</p>
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-bold text-primary">${service.price}</span>
-                  <span className="text-sm text-muted-foreground">{service.durationMinutes} min</span>
-                </div>
-              </motion.div>
-            ))}
+            {featuredServices.length === 0 ? (
+              <p className="col-span-full text-center text-muted-foreground">Loading services...</p>
+            ) : (
+              featuredServices.map((service) => (
+                <motion.div
+                  key={service.id}
+                  className="flex flex-col overflow-hidden rounded-lg border border-secondary bg-card transition-shadow hover:shadow-lg dark:border-secondary/30"
+                  variants={itemVariants}
+                >
+                  <div className="relative h-48 w-full bg-muted">
+                    <Image
+                      src={getServiceImageUrl(service.image)}
+                      alt={service.name}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                    />
+                  </div>
+                  <div className="flex flex-1 flex-col p-6">
+                    <h3 className="mb-2 text-xl font-semibold">{service.name}</h3>
+                    <p className="mb-4 flex-1 text-sm text-muted-foreground line-clamp-2">
+                      {service.description}
+                    </p>
+                    <div className="mb-4 flex items-center justify-between">
+                      <span className="text-lg font-bold text-primary">${service.price}</span>
+                      <span className="text-sm text-muted-foreground">{service.durationMinutes} min</span>
+                    </div>
+                    <Button className="w-full bg-primary text-white hover:bg-[#B2223A]" asChild size="sm">
+                      <Link href={`/book?service=${service.id}`}>Book Now</Link>
+                    </Button>
+                  </div>
+                </motion.div>
+              ))
+            )}
           </motion.div>
 
           <div className="text-center mt-12">
@@ -178,16 +199,16 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-16 md:py-24 bg-secondary/10 dark:bg-secondary/5">
-        <div className="container px-4">
+      <section className="bg-secondary/10 py-16 md:py-24 dark:bg-secondary/5">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
-            className="text-center mb-12"
+            className="mb-12 text-center"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Featured Products</h2>
+            <h2 className="mb-4 text-3xl font-bold md:text-4xl">Featured Products</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Premium beauty and wellness products for your home care routine
             </p>
@@ -243,7 +264,7 @@ export default function Home() {
 
       {/* Team Section */}
       <section className="py-16 md:py-24">
-        <div className="container px-4">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
             className="text-center mb-12"
             initial={{ opacity: 0, y: 20 }}
@@ -265,13 +286,25 @@ export default function Home() {
             viewport={{ once: true }}
           >
             {teamMembers.map((member) => (
-              <motion.div key={member.id} className="text-center" variants={itemVariants}>
-                <div className="mb-4 rounded-lg overflow-hidden h-48 bg-background relative">
-                  <Image src={member.image || "/placeholder.svg"} alt={member.name} fill className="object-cover" />
+              <motion.div
+                key={member.id}
+                className="flex flex-col items-center rounded-lg border bg-card p-4 text-center"
+                variants={itemVariants}
+              >
+                <div className="relative mb-4 h-48 w-full overflow-hidden rounded-lg bg-muted">
+                  <Image
+                    src={member.image || "/professional-woman-stylist.jpg"}
+                    alt={member.name}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 25vw"
+                  />
                 </div>
-                <h3 className="font-semibold text-lg">{member.name}</h3>
-                <p className="text-primary text-sm mb-2">{member.role}</p>
-                <p className="text-xs text-muted-foreground">{member.specialties.join(", ")}</p>
+                <h3 className="text-lg font-semibold">{member.name}</h3>
+                <p className="mb-2 text-sm text-primary">{member.role}</p>
+                <p className="text-xs text-muted-foreground">
+                  {member.specialties?.length ? member.specialties.join(", ") : "Salon professional"}
+                </p>
               </motion.div>
             ))}
           </motion.div>
@@ -279,16 +312,16 @@ export default function Home() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-16 md:py-24 bg-secondary/10 dark:bg-secondary/5">
-        <div className="container px-4">
+      <section className="bg-secondary/10 py-16 md:py-24 dark:bg-secondary/5">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
-            className="text-center mb-12"
+            className="mb-12 text-center"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">What Our Clients Say</h2>
+            <h2 className="mb-4 text-3xl font-bold md:text-4xl">What Our Clients Say</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">Real experiences from our satisfied customers</p>
           </motion.div>
 
@@ -318,8 +351,8 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-16 md:py-24 bg-primary text-white dark:bg-primary">
-        <div className="container px-4">
+      <section className="bg-primary py-16 text-white md:py-24 dark:bg-primary">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
             className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center"
             variants={containerVariants}
@@ -345,9 +378,9 @@ export default function Home() {
 
       {/* CTA Section */}
       <section className="py-16 md:py-24">
-        <div className="container px-4">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
-            className="max-w-2xl mx-auto text-center"
+            className="mx-auto max-w-2xl text-center"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}

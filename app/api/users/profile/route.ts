@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { hash } from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { requireSession } from "@/lib/session"
 
@@ -18,6 +19,7 @@ export async function GET() {
         phone: true,
         role: true,
         gender: true,
+        profileImage: true,
         staffServices: {
           include: { service: { select: { name: true } } },
         },
@@ -41,16 +43,41 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
 
-    const { name, phone, gender } = await request.json()
+    const { name, phone, gender, password, currentPassword } = await request.json()
+
+    const data: Record<string, unknown> = {
+      ...(name && { name }),
+      ...(phone !== undefined && { phone: phone || null }),
+      ...(gender && { gender }),
+    }
+
+    if (password) {
+      if (!currentPassword) {
+        return NextResponse.json({ error: "Current password is required" }, { status: 400 })
+      }
+      const current = await prisma.user.findUnique({ where: { id: auth.session.id } })
+      if (!current) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 })
+      }
+      const { compare } = await import("bcryptjs")
+      if (!(await compare(currentPassword, current.password))) {
+        return NextResponse.json({ error: "Current password is incorrect" }, { status: 400 })
+      }
+      data.password = await hash(password, 10)
+    }
 
     const user = await prisma.user.update({
       where: { id: auth.session.id },
-      data: {
-        ...(name && { name }),
-        ...(phone !== undefined && { phone: phone || null }),
-        ...(gender && { gender }),
+      data,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        gender: true,
+        profileImage: true,
       },
-      select: { id: true, name: true, email: true, phone: true, role: true, gender: true },
     })
 
     return NextResponse.json({ user })

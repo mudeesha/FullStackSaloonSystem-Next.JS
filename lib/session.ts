@@ -15,10 +15,13 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   if (!token) return null
 
   const payload = await verifyJwt(token)
-  if (!payload || typeof payload.id !== "number") return null
+  if (!payload || payload.id == null) return null
+
+  const id = typeof payload.id === "number" ? payload.id : Number(payload.id)
+  if (Number.isNaN(id)) return null
 
   return {
-    id: payload.id as number,
+    id,
     email: payload.email as string,
     role: payload.role as Role,
   }
@@ -45,6 +48,7 @@ export async function getUserProfile(userId: number) {
       phone: true,
       role: true,
       gender: true,
+      profileImage: true,
       createdAt: true,
     },
   })

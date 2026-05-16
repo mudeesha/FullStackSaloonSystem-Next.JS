@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { requireSession } from "@/lib/session"
 import { formatAppointmentForUi } from "@/lib/appointment-format"
+import { canTransition } from "@/lib/appointment-status"
 import type { AppointmentStatus } from "@prisma/client"
 
 const appointmentInclude = {
@@ -23,6 +24,8 @@ export async function GET(request: Request) {
     const status = searchParams.get("status")
     const date = searchParams.get("date")
     const today = searchParams.get("today") === "true"
+    const upcoming = searchParams.get("upcoming") === "true"
+    const history = searchParams.get("history") === "true"
 
     const where: Record<string, unknown> = {}
 
@@ -32,7 +35,11 @@ export async function GET(request: Request) {
       where.staffId = auth.session.id
     }
 
-    if (status && status !== "all") {
+    if (upcoming) {
+      where.status = { in: ["PENDING", "CONFIRMED"] }
+    } else if (history) {
+      where.status = { in: ["COMPLETED", "CANCELLED"] }
+    } else if (status && status !== "all") {
       where.status = status.toUpperCase() as AppointmentStatus
     }
 
@@ -66,6 +73,71 @@ export async function GET(request: Request) {
   }
 }
 
+export async function POST(request: Request) {
+  try {
+    const auth = await requireSession(["CUSTOMER", "ADMIN"])
+    if (!auth.session) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status })
+    }
+
+    const body = await request.json()
+    const { serviceId, staffId, appointmentDate, startTime, notes, customerId } = body
+
+    if (!serviceId || !staffId || !appointmentDate || !startTime) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    }
+
+    const service = await prisma.service.findUnique({ where: { id: Number(serviceId) } })
+    if (!service) {
+      return NextResponse.json({ error: "Service not found" }, { status: 404 })
+    }
+
+    const resolvedCustomerId =
+      auth.session.role === "ADMIN" && customerId ? Number(customerId) : auth.session.id
+
+    const startDateTime = new Date(`${appointmentDate}T${startTime}`)
+    const endDateTime = new Date(startDateTime.getTime() + service.durationMinutes * 60000)
+
+    const conflicting = await prisma.appointment.findFirst({
+      where: {
+        staffId: Number(staffId),
+        appointmentDate: new Date(appointmentDate),
+        status: { not: "CANCELLED" },
+        OR: [{ startTime: { lt: endDateTime }, endTime: { gt: startDateTime } }],
+      },
+    })
+
+    if (conflicting) {
+      return NextResponse.json({ error: "Selected time slot is no longer available" }, { status: 409 })
+    }
+
+    const appointment = await prisma.appointment.create({
+      data: {
+        customerId: resolvedCustomerId,
+        staffId: Number(staffId),
+        appointmentDate: new Date(appointmentDate),
+        startTime: startDateTime,
+        endTime: endDateTime,
+        status: "PENDING",
+        notes: notes || null,
+        services: {
+          create: {
+            serviceId: Number(serviceId),
+            price: service.price,
+            durationMinutes: service.durationMinutes,
+          },
+        },
+      },
+      include: appointmentInclude,
+    })
+
+    return NextResponse.json(formatAppointmentForUi(appointment), { status: 201 })
+  } catch (error) {
+    console.error("Error creating appointment:", error)
+    return NextResponse.json({ error: "Failed to create appointment" }, { status: 500 })
+  }
+}
+
 export async function PATCH(request: Request) {
   try {
     const auth = await requireSession()
@@ -91,13 +163,13 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    if (auth.session.role === "CUSTOMER") {
-      if (appointment.customerId !== auth.session.id) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-      }
-      if (normalizedStatus !== "CANCELLED") {
-        return NextResponse.json({ error: "Customers can only cancel appointments" }, { status: 403 })
-      }
+    if (auth.session.role === "CUSTOMER" && appointment.customerId !== auth.session.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const transition = canTransition(appointment.status, normalizedStatus, auth.session.role)
+    if (!transition.ok) {
+      return NextResponse.json({ error: transition.error }, { status: 400 })
     }
 
     const updated = await prisma.appointment.update({

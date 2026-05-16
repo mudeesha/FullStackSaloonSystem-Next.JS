@@ -4,23 +4,17 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
-import { Menu, X, LogOut } from "lucide-react"
+import { Menu, X, LogOut, LayoutDashboard, User } from "lucide-react"
 import { useState } from "react"
-import Image from "next/image"
+import { useAuth } from "@/hooks/use-auth"
 
 export function Header() {
   const pathname = usePathname()
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
+  const { user, loading, logout, dashboardPath, profilePath, isLoggedIn } = useAuth()
 
-  const isAuthenticated =
-    pathname.startsWith("/dashboard") || pathname.startsWith("/staff") || pathname.startsWith("/admin")
-
-  if (
-    (!isAuthenticated && pathname.startsWith("/dashboard")) ||
-    pathname.startsWith("/staff") ||
-    pathname.startsWith("/admin")
-  ) {
+  if (pathname.startsWith("/staff") || pathname.startsWith("/admin")) {
     return null
   }
 
@@ -34,21 +28,32 @@ export function Header() {
     { href: "/contact", label: "Contact" },
   ]
 
-  const getDashboardLink = () => {
-    if (pathname.startsWith("/staff")) return "/staff/dashboard"
-    if (pathname.startsWith("/admin")) return "/admin/dashboard"
-    return "/dashboard"
+  const accountLinks = isLoggedIn
+    ? [
+        { href: dashboardPath, label: "Dashboard", icon: LayoutDashboard },
+        { href: profilePath, label: "Profile", icon: User },
+      ]
+    : []
+
+  const closeMenus = () => {
+    setMobileNavOpen(false)
+    setAccountMenuOpen(false)
+  }
+
+  const handleLogout = async () => {
+    closeMenus()
+    await logout()
   }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white">S</div>
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <Link href="/" className="flex shrink-0 items-center gap-2 text-xl font-bold">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white">S</div>
           <span>Salon</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden items-center gap-6 md:flex lg:gap-8">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -62,84 +67,111 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
           <ThemeToggle />
 
-          {isAuthenticated ? (
-            <div className="relative">
-              <button
-                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                className="w-10 h-10 rounded-full border-2 border-primary overflow-hidden hover:opacity-80 transition-opacity"
-              >
-                <Image
-                  src="/profile-photo.jpg"
-                  alt="Profile"
-                  width={40}
-                  height={40}
-                  className="w-full h-full object-cover"
-                />
-              </button>
-
-              {profileMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-background border rounded-lg shadow-lg z-50">
-                  <Link
-                    href={getDashboardLink()}
-                    className="block px-4 py-2 text-sm hover:bg-accent rounded-t-lg"
-                    onClick={() => setProfileMenuOpen(false)}
-                  >
-                    Dashboard
-                  </Link>
-                  <button
-                    onClick={() => {
-                      setProfileMenuOpen(false)
-                      // Handle logout
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm hover:bg-accent rounded-b-lg flex items-center gap-2 text-destructive"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="hidden md:flex gap-2">
-              <Button variant="ghost" asChild>
+          {!loading && !isLoggedIn && (
+            <div className="hidden items-center gap-2 md:flex">
+              <Button variant="ghost" asChild size="sm">
                 <Link href="/login">Login</Link>
               </Button>
-              <Button className="bg-primary hover:bg-[#B2223A] text-white" asChild>
+              <Button className="bg-primary text-white hover:bg-[#B2223A]" asChild size="sm">
                 <Link href="/register">Register</Link>
               </Button>
             </div>
           )}
 
-          <button className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          {!loading && isLoggedIn && (
+            <div className="relative">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 shrink-0"
+                aria-label="Account menu"
+                aria-expanded={accountMenuOpen}
+                onClick={() => setAccountMenuOpen((open) => !open)}
+              >
+                {accountMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
+
+              {accountMenuOpen && (
+                <>
+                  <button
+                    type="button"
+                    className="fixed inset-0 z-40"
+                    aria-label="Close menu"
+                    onClick={() => setAccountMenuOpen(false)}
+                  />
+                  <div className="absolute right-0 z-50 mt-2 w-52 rounded-lg border bg-background py-1 shadow-lg">
+                    <p className="border-b px-4 py-2 text-xs text-muted-foreground truncate">{user?.name}</p>
+                    {accountLinks.map((link) => {
+                      const Icon = link.icon
+                      return (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-accent"
+                          onClick={closeMenus}
+                        >
+                          <Icon className="h-4 w-4" />
+                          {link.label}
+                        </Link>
+                      )
+                    })}
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-destructive hover:bg-accent"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-10 w-10 md:hidden"
+            aria-label="Navigation menu"
+            onClick={() => setMobileNavOpen((open) => !open)}
+          >
+            {mobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
         </div>
       </div>
 
-      {mobileMenuOpen && (
-        <div className="md:hidden border-t bg-background p-4 space-y-3">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`block text-sm font-medium transition-colors ${
-                isActive(link.href) ? "text-primary" : "text-muted-foreground hover:text-foreground"
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {link.label}
-            </Link>
-          ))}
-          {!isAuthenticated && (
-            <div className="flex gap-2 pt-2">
-              <Button variant="ghost" asChild className="flex-1">
-                <Link href="/login">Login</Link>
+      {mobileNavOpen && (
+        <div className="border-t bg-background px-4 py-4 md:hidden">
+          <nav className="space-y-1">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`block rounded-md px-3 py-2 text-sm font-medium ${
+                  isActive(link.href) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent"
+                }`}
+                onClick={closeMenus}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+
+          {!loading && !isLoggedIn && (
+            <div className="mt-4 flex gap-2 border-t pt-4">
+              <Button variant="outline" asChild className="flex-1">
+                <Link href="/login" onClick={closeMenus}>
+                  Login
+                </Link>
               </Button>
-              <Button className="bg-primary hover:bg-[#B2223A] text-white flex-1" asChild>
-                <Link href="/register">Register</Link>
+              <Button className="flex-1 bg-primary text-white hover:bg-[#B2223A]" asChild>
+                <Link href="/register" onClick={closeMenus}>
+                  Register
+                </Link>
               </Button>
             </div>
           )}

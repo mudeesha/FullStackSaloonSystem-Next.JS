@@ -69,6 +69,16 @@ export async function PATCH(request: Request) {
     }
 
     const normalized = status.toUpperCase() as PaymentStatus
+
+    const existing = await prisma.payment.findUnique({ where: { id: Number(id) } })
+    if (!existing) {
+      return NextResponse.json({ error: "Payment not found" }, { status: 404 })
+    }
+
+    if (normalized === "REFUNDED" && existing.status !== "PAID") {
+      return NextResponse.json({ error: "Only paid payments can be refunded" }, { status: 400 })
+    }
+
     const payment = await prisma.payment.update({
       where: { id: Number(id) },
       data: { status: normalized },

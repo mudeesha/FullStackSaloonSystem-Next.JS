@@ -9,25 +9,21 @@ import { Edit, Trash2, Plus } from "lucide-react"
 import { ConfirmationModal } from "@/components/confirmation-modal"
 import { FormModal } from "@/components/form-modal"
 
+type User = {
+  id: number
+  name: string
+  email: string
+  phone: string
+  role: string
+  joinDate: string
+}
+
 export default function AdminUsersPage() {
   const { toast } = useToast()
-  const [users, setUsers] = useState<
-    { id: number; name: string; email: string; phone: string; role: string; joinDate: string }[]
-  >([])
-
-  const fetchUsers = () => {
-    fetch("/api/users")
-      .then((res) => res.json())
-      .then((data) => setUsers(data.data ?? []))
-      .catch(console.error)
-  }
-
-  useEffect(() => {
-    fetchUsers()
-  }, [])
-  const [confirmModal, setConfirmModal] = useState<{ open: boolean; type: "delete" | "edit"; id: number }>({
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
+  const [confirmModal, setConfirmModal] = useState<{ open: boolean; id: number }>({
     open: false,
-    type: "delete",
     id: 0,
   })
   const [formModal, setFormModal] = useState<{ open: boolean; type: "add" | "edit"; id?: number }>({
@@ -36,16 +32,46 @@ export default function AdminUsersPage() {
   })
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", role: "customer" })
 
+  const fetchUsers = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch("/api/users", { credentials: "include" })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed to load users")
+      setUsers(data.data ?? [])
+    } catch (e) {
+      toast({
+        title: "Error",
+        description: e instanceof Error ? e.message : "Failed to load users",
+        variant: "destructive",
+      })
+      setUsers([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
   const handleDelete = async (id: number) => {
     try {
-      const res = await fetch(`/api/users?id=${id}`, { method: "DELETE" })
-      if (!res.ok) throw new Error("Failed")
+      const res = await fetch(`/api/users?id=${id}`, { method: "DELETE", credentials: "include" })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Failed")
+      }
       fetchUsers()
       toast({ title: "User Deleted", description: "User has been removed." })
-    } catch {
-      toast({ title: "Error", description: "Failed to delete user.", variant: "destructive" })
+    } catch (e) {
+      toast({
+        title: "Error",
+        description: e instanceof Error ? e.message : "Failed to delete user.",
+        variant: "destructive",
+      })
     }
-    setConfirmModal({ open: false, type: "delete", id: 0 })
+    setConfirmModal({ open: false, id: 0 })
   }
 
   const handleOpenAddForm = () => {
@@ -72,119 +98,113 @@ export default function AdminUsersPage() {
         const res = await fetch("/api/users", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({
             ...formData,
-            role: formData.role,
             password: "ChangeMe123!",
           }),
         })
-        if (!res.ok) throw new Error("Failed")
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || "Failed")
         toast({ title: "User Added", description: "New user has been added successfully." })
       } else {
         const res = await fetch("/api/users", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: formModal.id, ...formData, role: formData.role }),
+          credentials: "include",
+          body: JSON.stringify({ id: formModal.id, ...formData }),
         })
-        if (!res.ok) throw new Error("Failed")
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || "Failed")
         toast({ title: "User Updated", description: "User has been updated successfully." })
       }
       fetchUsers()
-    } catch {
-      toast({ title: "Error", description: "Failed to save user.", variant: "destructive" })
+    } catch (e) {
+      toast({
+        title: "Error",
+        description: e instanceof Error ? e.message : "Failed to save user.",
+        variant: "destructive",
+      })
     }
     setFormModal({ open: false, type: "add" })
   }
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
-      },
-    },
-  }
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.5 },
-    },
-  }
-
   return (
     <div className="space-y-6">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-3xl font-bold">Users & Staff</h2>
-            <p className="text-muted-foreground">Manage customers and staff members</p>
-          </div>
-          <Button onClick={handleOpenAddForm}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add User
-          </Button>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold">Users & Staff</h2>
+          <p className="text-muted-foreground">Manage customers and staff members</p>
         </div>
-      </motion.div>
+        <Button onClick={handleOpenAddForm}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add User
+        </Button>
+      </div>
 
-      <motion.div className="space-y-4" variants={containerVariants} initial="hidden" animate="visible">
-        {users.map((user, index) => (
-          <motion.div
-            key={user.id}
-            className="p-6 rounded-lg border bg-card hover:shadow-lg transition-shadow"
-            variants={itemVariants}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-4 mb-2">
-                  <h3 className="text-lg font-semibold">{user.name}</h3>
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${
-                      user.role === "customer" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
-                    }`}
+      {loading ? (
+        <p className="py-8 text-center text-muted-foreground">Loading users...</p>
+      ) : users.length === 0 ? (
+        <div className="rounded-lg border bg-card p-8 text-center text-muted-foreground">
+          No users found. Add a customer or staff member to get started.
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {users.map((user) => (
+            <motion.div
+              key={user.id}
+              className="rounded-lg border bg-card p-6 transition-shadow hover:shadow-lg"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="mb-2 flex items-center gap-4">
+                    <h3 className="text-lg font-semibold">{user.name}</h3>
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
+                        user.role === "customer" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
+                      }`}
+                    >
+                      {user.role}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground md:grid-cols-4">
+                    <div>
+                      <p className="font-medium text-foreground">Email</p>
+                      <p>{user.email}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">Phone</p>
+                      <p>{user.phone || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">Role</p>
+                      <p className="capitalize">{user.role}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">Join Date</p>
+                      <p>{user.joinDate}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => handleOpenEditForm(user.id)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => setConfirmModal({ open: true, id: user.id })}
                   >
-                    {user.role}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
-                  <div>
-                    <p className="font-medium text-foreground">Email</p>
-                    <p>{user.email}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">Phone</p>
-                    <p>{user.phone}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">Role</p>
-                    <p className="capitalize">{user.role}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">Join Date</p>
-                    <p>{user.joinDate}</p>
-                  </div>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-              <div className="flex gap-2 ml-4">
-                <Button size="sm" variant="outline" onClick={() => handleOpenEditForm(user.id)}>
-                  <Edit className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => setConfirmModal({ open: true, type: "delete", id: user.id })}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
+            </motion.div>
+          ))}
+        </div>
+      )}
 
       <ConfirmationModal
         open={confirmModal.open}
@@ -193,7 +213,7 @@ export default function AdminUsersPage() {
         actionLabel="Delete"
         isDestructive
         onConfirm={() => handleDelete(confirmModal.id)}
-        onCancel={() => setConfirmModal({ open: false, type: "delete", id: 0 })}
+        onCancel={() => setConfirmModal({ open: false, id: 0 })}
       />
 
       <FormModal
@@ -206,7 +226,7 @@ export default function AdminUsersPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Full Name</label>
+            <label className="mb-2 block text-sm font-medium">Full Name</label>
             <Input
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -214,7 +234,7 @@ export default function AdminUsersPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Email</label>
+            <label className="mb-2 block text-sm font-medium">Email</label>
             <Input
               type="email"
               value={formData.email}
@@ -223,7 +243,7 @@ export default function AdminUsersPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Phone</label>
+            <label className="mb-2 block text-sm font-medium">Phone</label>
             <Input
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -231,11 +251,11 @@ export default function AdminUsersPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Role</label>
+            <label className="mb-2 block text-sm font-medium">Role</label>
             <select
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              className="w-full px-3 py-2 border rounded-md bg-background"
+              className="w-full rounded-md border bg-background px-3 py-2"
             >
               <option value="customer">Customer</option>
               <option value="staff">Staff</option>

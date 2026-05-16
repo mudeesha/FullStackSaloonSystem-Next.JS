@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
 
-    const { name, email, password, phone, role } = await request.json()
+    const { name, email, password, phone, role, serviceIds } = await request.json()
     if (!name || !email || !password || !role) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
@@ -68,13 +68,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Email already registered" }, { status: 400 })
     }
 
+    const userRole = role.toUpperCase() as Role
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: await hash(password, 10),
         phone: phone || null,
-        role: role.toUpperCase() as Role,
+        role: userRole,
+        ...(userRole === "STAFF" &&
+          Array.isArray(serviceIds) &&
+          serviceIds.length > 0 && {
+            staffServices: {
+              create: serviceIds.map((id: number | string) => ({
+                serviceId: Number(id),
+              })),
+            },
+          }),
       },
       select: { id: true, name: true, email: true, phone: true, role: true, createdAt: true },
     })
@@ -93,7 +103,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
 
-    const { id, name, email, phone, role, password } = await request.json()
+    const { id, name, email, phone, role, password, serviceIds } = await request.json()
     if (!id) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 })
     }
@@ -110,6 +120,18 @@ export async function PUT(request: Request) {
       data,
       select: { id: true, name: true, email: true, phone: true, role: true, createdAt: true },
     })
+
+    if (Array.isArray(serviceIds) && (role?.toUpperCase() === "STAFF" || user.role === "STAFF")) {
+      await prisma.staffService.deleteMany({ where: { staffId: Number(id) } })
+      if (serviceIds.length > 0) {
+        await prisma.staffService.createMany({
+          data: serviceIds.map((serviceId: number | string) => ({
+            staffId: Number(id),
+            serviceId: Number(serviceId),
+          })),
+        })
+      }
+    }
 
     return NextResponse.json(user)
   } catch (error) {

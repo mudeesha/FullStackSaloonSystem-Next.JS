@@ -7,7 +7,10 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useToast } from "@/hooks/use-toast"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
+import Image from "next/image"
+import { ImageUpload } from "@/components/image-upload"
+import { getServiceImageUrl } from "@/lib/image-url"
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -20,6 +23,11 @@ type ProfileFormData = z.infer<typeof profileSchema>
 
 export default function StaffProfilePage() {
   const { toast } = useToast()
+  const [profileImage, setProfileImage] = useState<string | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
+
   const {
     register,
     handleSubmit,
@@ -29,8 +37,8 @@ export default function StaffProfilePage() {
     resolver: zodResolver(profileSchema),
   })
 
-  useEffect(() => {
-    fetch("/api/users/profile")
+  const loadProfile = () => {
+    fetch("/api/users/profile", { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
         if (data.user) {
@@ -40,53 +48,111 @@ export default function StaffProfilePage() {
             phone: data.user.phone || "",
             specialties: data.user.specialties || "",
           })
+          setProfileImage(data.user.profileImage || null)
         }
       })
       .catch(console.error)
+  }
+
+  useEffect(() => {
+    loadProfile()
   }, [reset])
+
+  const uploadAvatar = async () => {
+    if (!avatarFile) return null
+    const formData = new FormData()
+    formData.append("image", avatarFile)
+    const res = await fetch("/api/users/profile/avatar", {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || "Upload failed")
+    return data.profileImage as string
+  }
 
   const onSubmit = async (data: ProfileFormData) => {
     try {
+      setUploading(true)
+      if (avatarFile) {
+        const path = await uploadAvatar()
+        if (path) setProfileImage(path)
+        setAvatarFile(null)
+      }
+
       const res = await fetch("/api/users/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ name: data.name, phone: data.phone }),
       })
-      if (!res.ok) throw new Error("Failed")
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || "Failed")
+      }
       toast({ title: "Profile Updated", description: "Your profile has been updated successfully." })
-    } catch {
-      toast({ title: "Error", description: "Failed to update profile.", variant: "destructive" })
+      loadProfile()
+    } catch (e) {
+      toast({
+        title: "Error",
+        description: e instanceof Error ? e.message : "Failed to update profile.",
+        variant: "destructive",
+      })
+    } finally {
+      setUploading(false)
     }
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold mb-2">My Profile</h2>
-        <p className="text-muted-foreground">Manage your professional information</p>
+        <h2 className="mb-2 text-3xl font-bold">My Profile</h2>
+        <p className="text-muted-foreground">Manage your professional information and photo</p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl p-8 rounded-lg border bg-card space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl space-y-6 rounded-lg border bg-card p-8">
+        <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
+          <div className="relative h-28 w-28 overflow-hidden rounded-full border bg-muted">
+            <Image
+              src={previewUrl || getServiceImageUrl(profileImage) || "/profile-photo.jpg"}
+              alt="Profile"
+              fill
+              className="object-cover"
+            />
+          </div>
+          <ImageUpload
+            label="Upload Profile Photo"
+            currentImage={profileImage || "/profile-photo.jpg"}
+            onImageSelect={(file) => {
+              setAvatarFile(file)
+              setPreviewUrl(URL.createObjectURL(file))
+            }}
+          />
+        </div>
+
         <div>
-          <label className="block text-sm font-medium mb-2">Full Name</label>
+          <label className="mb-2 block text-sm font-medium">Full Name</label>
           <Input {...register("name")} className={errors.name ? "border-red-500" : ""} />
-          {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
+          {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>}
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2">Email</label>
+          <label className="mb-2 block text-sm font-medium">Email</label>
           <Input {...register("email")} type="email" disabled className="bg-muted" />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2">Phone</label>
+          <label className="mb-2 block text-sm font-medium">Phone</label>
           <Input {...register("phone")} className={errors.phone ? "border-red-500" : ""} />
-          {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>}
+          {errors.phone && <p className="mt-1 text-sm text-red-500">{errors.phone.message}</p>}
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2">Specialties (assigned services)</label>
+          <label className="mb-2 block text-sm font-medium">Specialties (assigned services)</label>
           <Textarea {...register("specialties")} rows={3} disabled className="bg-muted" />
-          <p className="text-xs text-muted-foreground mt-1">Contact admin to update service assignments.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Contact admin to update service assignments.</p>
         </div>
-        <Button type="submit">Save Changes</Button>
+        <Button type="submit" disabled={uploading}>
+          {uploading ? "Saving..." : "Save Changes"}
+        </Button>
       </form>
     </div>
   )

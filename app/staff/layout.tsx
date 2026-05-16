@@ -19,6 +19,7 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
     { href: "/staff/dashboard", label: "Dashboard" },
     { href: "/staff/appointments", label: "Appointments" },
     { href: "/staff/availability", label: "Availability" },
+    { href: "/staff/reviews", label: "Reviews" },
     { href: "/staff/profile", label: "Profile" },
   ]
 

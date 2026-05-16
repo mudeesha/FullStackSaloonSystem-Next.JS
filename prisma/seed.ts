@@ -3,6 +3,19 @@ import { hash } from "bcryptjs"
 
 const prisma = new PrismaClient()
 
+function atTime(base: Date, hours: number, minutes = 0) {
+  const d = new Date(base)
+  d.setHours(hours, minutes, 0, 0)
+  return d
+}
+
+function dayStart(offsetDays: number) {
+  const d = new Date()
+  d.setDate(d.getDate() + offsetDays)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
 async function main() {
   const password = await hash("password123", 10)
 
@@ -18,7 +31,7 @@ async function main() {
     },
   })
 
-  const staff1 = await prisma.user.upsert({
+  const sarah = await prisma.user.upsert({
     where: { email: "sarah@salon.com" },
     update: {},
     create: {
@@ -30,7 +43,7 @@ async function main() {
     },
   })
 
-  const staff2 = await prisma.user.upsert({
+  const emma = await prisma.user.upsert({
     where: { email: "emma@salon.com" },
     update: {},
     create: {
@@ -51,6 +64,18 @@ async function main() {
       password,
       role: "CUSTOMER",
       phone: "555-222-1111",
+    },
+  })
+
+  const customer2 = await prisma.user.upsert({
+    where: { email: "jane@salon.com" },
+    update: {},
+    create: {
+      name: "Jane Smith",
+      email: "jane@salon.com",
+      password,
+      role: "CUSTOMER",
+      phone: "555-222-2222",
     },
   })
 
@@ -90,55 +115,182 @@ async function main() {
     }),
   ])
 
-  for (const service of services) {
-    const existing = await prisma.staffService.findFirst({
-      where: { staffId: staff1.id, serviceId: service.id },
-    })
-    if (!existing) {
-      await prisma.staffService.create({ data: { staffId: staff1.id, serviceId: service.id } })
-    }
-    const existing2 = await prisma.staffService.findFirst({
-      where: { staffId: staff2.id, serviceId: service.id },
-    })
-    if (!existing2) {
-      await prisma.staffService.create({ data: { staffId: staff2.id, serviceId: service.id } })
+  const staffMembers = [sarah, emma]
+  for (const staff of staffMembers) {
+    for (const service of services) {
+      const existing = await prisma.staffService.findFirst({
+        where: { staffId: staff.id, serviceId: service.id },
+      })
+      if (!existing) {
+        await prisma.staffService.create({
+          data: { staffId: staff.id, serviceId: service.id },
+        })
+      }
     }
   }
 
-  const days = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"] as const
-  for (const staffId of [staff1.id, staff2.id]) {
-    for (const day of days) {
+  const weekdays = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"] as const
+  for (const staff of staffMembers) {
+    await prisma.staffAvailability.deleteMany({ where: { staffId: staff.id } })
+    for (const day of weekdays) {
       await prisma.staffAvailability.create({
-        data: { staffId, dayOfWeek: day, startTime: "09:00", endTime: "17:00", isActive: true },
-      }).catch(() => {})
+        data: {
+          staffId: staff.id,
+          dayOfWeek: day,
+          startTime: day === "SATURDAY" ? "10:00" : "09:00",
+          endTime: day === "SATURDAY" ? "14:00" : "17:00",
+          isActive: true,
+        },
+      })
     }
   }
 
-  const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  tomorrow.setHours(0, 0, 0, 0)
-
-  const start = new Date(tomorrow)
-  start.setHours(10, 0, 0, 0)
-  const end = new Date(start.getTime() + 30 * 60000)
-
-  await prisma.appointment.create({
-    data: {
+  const seedAppointments = [
+    {
+      key: "today-pending",
       customerId: customer.id,
-      staffId: staff1.id,
-      appointmentDate: tomorrow,
-      startTime: start,
-      endTime: end,
-      status: "PENDING",
-      services: {
-        create: {
-          serviceId: services[0].id,
-          price: services[0].price,
-          durationMinutes: services[0].durationMinutes,
-        },
-      },
+      staffId: sarah.id,
+      dayOffset: 0,
+      hour: 10,
+      duration: 30,
+      status: "PENDING" as const,
+      serviceIndex: 0,
+      payment: null,
+      review: null,
     },
-  }).catch(() => {})
+    {
+      key: "today-confirmed",
+      customerId: customer2.id,
+      staffId: sarah.id,
+      dayOffset: 0,
+      hour: 14,
+      duration: 45,
+      status: "CONFIRMED" as const,
+      serviceIndex: 1,
+      payment: null,
+      review: null,
+    },
+    {
+      key: "tomorrow-pending",
+      customerId: customer.id,
+      staffId: emma.id,
+      dayOffset: 1,
+      hour: 11,
+      duration: 60,
+      status: "PENDING" as const,
+      serviceIndex: 2,
+      payment: null,
+      review: null,
+    },
+    {
+      key: "past-completed-paid",
+      customerId: customer.id,
+      staffId: emma.id,
+      dayOffset: -7,
+      hour: 15,
+      duration: 30,
+      status: "COMPLETED" as const,
+      serviceIndex: 0,
+      payment: "PAID" as const,
+      review: { rating: 5, comment: "Excellent haircut, very professional!" },
+    },
+    {
+      key: "past-completed-pending-pay",
+      customerId: customer2.id,
+      staffId: sarah.id,
+      dayOffset: -3,
+      hour: 13,
+      duration: 45,
+      status: "COMPLETED" as const,
+      serviceIndex: 1,
+      payment: "PENDING" as const,
+      review: null,
+    },
+    {
+      key: "past-cancelled",
+      customerId: customer.id,
+      staffId: sarah.id,
+      dayOffset: -2,
+      hour: 9,
+      duration: 30,
+      status: "CANCELLED" as const,
+      serviceIndex: 0,
+      payment: null,
+      review: null,
+    },
+  ]
+
+  for (const item of seedAppointments) {
+    const service = services[item.serviceIndex]
+    const appointmentDate = dayStart(item.dayOffset)
+    const startTime = atTime(appointmentDate, item.hour)
+    const endTime = new Date(startTime.getTime() + item.duration * 60000)
+
+    const existing = await prisma.appointment.findFirst({
+      where: {
+        customerId: item.customerId,
+        staffId: item.staffId,
+        appointmentDate,
+        startTime,
+      },
+    })
+
+    const appointment =
+      existing ??
+      (await prisma.appointment.create({
+        data: {
+          customerId: item.customerId,
+          staffId: item.staffId,
+          appointmentDate,
+          startTime,
+          endTime,
+          status: item.status,
+          services: {
+            create: {
+              serviceId: service.id,
+              price: service.price,
+              durationMinutes: service.durationMinutes,
+            },
+          },
+        },
+      }))
+
+    if (existing) {
+      await prisma.appointment.update({
+        where: { id: appointment.id },
+        data: { status: item.status },
+      })
+    }
+
+    if (item.payment) {
+      await prisma.payment.upsert({
+        where: { appointmentId: appointment.id },
+        create: {
+          appointmentId: appointment.id,
+          amount: service.price,
+          status: item.payment,
+          method: item.payment === "PAID" ? "CARD" : "CASH",
+          transactionId: item.payment === "PAID" ? `TXN-${appointment.id}` : null,
+        },
+        update: { status: item.payment, amount: service.price },
+      })
+    }
+
+    if (item.review) {
+      await prisma.review.upsert({
+        where: { appointmentId: appointment.id },
+        create: {
+          appointmentId: appointment.id,
+          rating: item.review.rating,
+          comment: item.review.comment,
+        },
+        update: {
+          rating: item.review.rating,
+          comment: item.review.comment,
+        },
+      })
+    }
+  }
 
   const productSeed = [
     {
@@ -177,10 +329,26 @@ async function main() {
     }
   }
 
+  const contactSamples = [
+    { name: "Alex Brown", email: "alex@example.com", message: "Do you offer bridal packages?" },
+    { name: "Maria Lee", email: "maria@example.com", message: "What are your Saturday hours?" },
+  ]
+
+  for (const msg of contactSamples) {
+    const existing = await prisma.contactMessage.findFirst({
+      where: { email: msg.email, message: msg.message },
+    })
+    if (!existing) {
+      await prisma.contactMessage.create({ data: msg })
+    }
+  }
+
   console.log("Seed complete. Login accounts:")
-  console.log("  Admin:    admin@salon.com / password123")
-  console.log("  Staff:    sarah@salon.com / password123")
-  console.log("  Customer: customer@salon.com / password123")
+  console.log("  Admin:     admin@salon.com / password123")
+  console.log("  Staff:     sarah@salon.com / password123")
+  console.log("  Staff:     emma@salon.com / password123")
+  console.log("  Customer:  customer@salon.com / password123")
+  console.log("  Customer:  jane@salon.com / password123")
   console.log("Admin id:", admin.id)
 }
 

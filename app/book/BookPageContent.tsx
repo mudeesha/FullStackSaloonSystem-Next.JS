@@ -10,8 +10,10 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useToast } from "@/hooks/use-toast"
 import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import Image from "next/image"
+import Link from "next/link"
+import { getServiceImageUrl } from "@/lib/image-url"
 import { InfoModal } from "@/components/info-modal"
 import { Eye } from "lucide-react"
 
@@ -88,15 +90,17 @@ function BookPageLoading() {
 
 export default function BookPageContent() {
   const { toast } = useToast()
+  const router = useRouter()
   const searchParams = useSearchParams()
-  const serviceId = searchParams.get('service')
-  
+  const serviceId = searchParams.get("service")
+
   const [bookingSuccess, setBookingSuccess] = useState(false)
   const [service, setService] = useState<Service | null>(null)
+  const [serviceOptions, setServiceOptions] = useState<Service[]>([])
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([])
   const [availableStaff, setAvailableStaff] = useState<StaffMember[]>([])
   const [staffAvailability, setStaffAvailability] = useState<StaffAvailability[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!!serviceId)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userData, setUserData] = useState<User | null>(null)
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false)
@@ -141,37 +145,55 @@ export default function BookPageContent() {
     checkAuth()
   }, [setValue])
 
-  // Fetch service details
   useEffect(() => {
     const fetchServiceData = async () => {
-      if (!serviceId) return
-    
+      if (!serviceId) {
+        try {
+          setLoading(true)
+          const res = await fetch("/api/public/services?limit=50&page=1")
+          const data = await res.json()
+          if (res.ok) {
+            setServiceOptions(data.data ?? [])
+          }
+        } catch (error) {
+          console.error("Failed to fetch services", error)
+          toast({
+            title: "Error",
+            description: "Failed to load services",
+            variant: "destructive",
+          })
+        } finally {
+          setLoading(false)
+        }
+        return
+      }
+
       try {
         setLoading(true)
         const [serviceRes, staffRes] = await Promise.all([
           fetch(`/api/public/services/${serviceId}`),
-          fetch(`/api/public/staff?serviceId=${serviceId}`)
+          fetch(`/api/public/staff?serviceId=${serviceId}`),
         ])
-    
+
         if (serviceRes.ok) {
           const serviceData = await serviceRes.json()
           setService(serviceData)
         } else {
-          throw new Error('Failed to fetch service')
+          throw new Error("Failed to fetch service")
         }
-    
+
         if (staffRes.ok) {
           const staffData = await staffRes.json()
           setStaffMembers(staffData)
         } else {
-          throw new Error('Failed to fetch staff')
+          throw new Error("Failed to fetch staff")
         }
       } catch (error) {
         console.error("Failed to fetch data", error)
         toast({
           title: "Error",
           description: "Failed to load service information",
-          variant: "destructive"
+          variant: "destructive",
         })
       } finally {
         setLoading(false)
@@ -249,16 +271,72 @@ export default function BookPageContent() {
     return availableStaff.some(staff => staff.id === staffId)
   }
 
-  // Function to get correct image URL
-  const getImageUrl = (imagePath: string | null | undefined) => {
-    if (!imagePath) return "/placeholder.svg"
-    if (imagePath.startsWith('http')) return imagePath
-    if (imagePath.startsWith('/uploads/')) return imagePath
-    return "/placeholder.svg"
-  }
-
   if (loading) {
     return <BookPageLoading />
+  }
+
+  if (!serviceId) {
+    return (
+      <PublicLayout>
+        <section className="py-12 md:py-20">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <motion.div
+              className="mb-10 text-center"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h1 className="text-4xl font-bold md:text-5xl">Book Your Appointment</h1>
+              <p className="mt-3 text-lg text-muted-foreground">Choose a service to get started</p>
+            </motion.div>
+
+            {serviceOptions.length === 0 ? (
+              <div className="text-center">
+                <p className="mb-6 text-muted-foreground">No services available right now.</p>
+                <Button asChild>
+                  <Link href="/services">Browse Services</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {serviceOptions.map((item) => (
+                  <motion.div
+                    key={item.id}
+                    className="overflow-hidden rounded-lg border bg-card transition-shadow hover:shadow-lg"
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <div className="relative h-44 w-full bg-muted">
+                      <Image
+                        src={getServiceImageUrl(item.image)}
+                        alt={item.name}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-3 p-5">
+                      <h2 className="text-xl font-semibold">{item.name}</h2>
+                      <p className="line-clamp-2 text-sm text-muted-foreground">{item.description}</p>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-bold text-primary">${item.price}</span>
+                        <span className="text-muted-foreground">{item.durationMinutes} min</span>
+                      </div>
+                      <Button
+                        className="w-full bg-primary text-white hover:bg-[#B2223A]"
+                        onClick={() => router.push(`/book?service=${item.id}`)}
+                      >
+                        Book This Service
+                      </Button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      </PublicLayout>
+    )
   }
 
   if (!service) {
@@ -309,7 +387,7 @@ export default function BookPageContent() {
               <div className="p-6 rounded-lg border bg-card sticky top-6">
                 <div className="relative w-full h-48 mb-4 rounded-lg overflow-hidden">
                   <Image
-                    src={getImageUrl(service.image)}
+                    src={getServiceImageUrl(service.image)}
                     alt={service.name}
                     fill
                     className="object-cover"
