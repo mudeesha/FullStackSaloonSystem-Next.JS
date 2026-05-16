@@ -1,12 +1,17 @@
 // app/api/services/route.ts
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { requireSession } from "@/lib/session"
 import { writeFile } from "fs/promises"
 import path from "path"
 import { v4 as uuidv4 } from "uuid"
 
 export async function GET(request: Request) {
   try {
+    const auth = await requireSession(["ADMIN"])
+    if (!auth.session) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status })
+    }
     const { searchParams } = new URL(request.url)
     const page = Number(searchParams.get("page")) || 1
     const limit = Number(searchParams.get("limit")) || 9
@@ -16,10 +21,7 @@ export async function GET(request: Request) {
 
     const where = search
       ? {
-          OR: [
-            { name: { contains: search, mode: "insensitive" } },
-            { description: { contains: search, mode: "insensitive" } },
-          ],
+          OR: [{ name: { contains: search } }, { description: { contains: search } }],
         }
       : {}
 
@@ -65,6 +67,11 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireSession(["ADMIN"])
+    if (!auth.session) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status })
+    }
+
     const formData = await request.formData()
     
     const name = formData.get("name") as string
@@ -112,7 +119,7 @@ export async function POST(request: Request) {
         description,
         price: parseFloat(price),
         durationMinutes: parseInt(durationMinutes),
-        image: imagePath,
+        image: imagePath || "/placeholder.svg",
         staff: {
           create: staffIds.map(staffId => ({
             staffId: parseInt(staffId)
@@ -145,6 +152,11 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    const auth = await requireSession(["ADMIN"])
+    if (!auth.session) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status })
+    }
+
     const formData = await request.formData()
     
     const id = formData.get("id") as string
@@ -217,7 +229,7 @@ export async function PUT(request: Request) {
         description,
         price: parseFloat(price),
         durationMinutes: parseInt(durationMinutes),
-        image: imagePath,
+        image: imagePath || "/placeholder.svg",
         staff: {
           deleteMany: {}, // Remove existing staff assignments
           create: staffIds.map(staffId => ({
@@ -251,6 +263,11 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const auth = await requireSession(["ADMIN"])
+    if (!auth.session) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status })
+    }
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get("id")
     

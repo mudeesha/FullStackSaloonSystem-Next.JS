@@ -2,124 +2,98 @@
 
 import { motion } from "framer-motion"
 import { Card } from "@/components/ui/card"
-import { mockAppointments } from "@/lib/mock-data"
-import { Calendar, Users, CheckCircle } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Calendar, CheckCircle, Clock } from "lucide-react"
+
+type Appointment = {
+  id: number
+  serviceName: string
+  clientName: string
+  date: string
+  time: string
+  status: string
+}
 
 export default function StaffDashboard() {
-  const todayAppointments = mockAppointments.filter((a) => a.status === "confirmed")
-  const completedToday = mockAppointments.filter((a) => a.status === "completed").length
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+
+  useEffect(() => {
+    fetch("/api/appointments?today=true")
+      .then((res) => res.json())
+      .then((data) => setAppointments(data.data ?? []))
+      .catch(console.error)
+  }, [])
+
+  const todayAppointments = appointments.filter(
+    (a) => a.status === "confirmed" || a.status === "pending",
+  )
+  const completedToday = appointments.filter((a) => a.status === "completed").length
 
   const stats = [
-    {
-      label: "Today's Appointments",
-      value: todayAppointments.length,
-      icon: Calendar,
-      color: "text-blue-500",
-    },
-    {
-      label: "Clients Today",
-      value: todayAppointments.length,
-      icon: Users,
-      color: "text-green-500",
-    },
-    {
-      label: "Completed Today",
-      value: completedToday,
-      icon: CheckCircle,
-      color: "text-purple-500",
-    },
+    { label: "Today's Appointments", value: todayAppointments.length, icon: Calendar, color: "text-blue-500" },
+    { label: "Completed Today", value: completedToday, icon: CheckCircle, color: "text-green-500" },
+    { label: "Pending", value: appointments.filter((a) => a.status === "pending").length, icon: Clock, color: "text-orange-500" },
   ]
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
-      },
-    },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.2 } },
   }
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.5 },
-    },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
   }
 
   return (
-    <div className="space-y-8">
-      <motion.div
-        className="mb-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <h2 className="text-3xl font-bold mb-2">Today's Overview</h2>
-        <p className="text-muted-foreground">Your schedule and appointments for today</p>
+    <motion.div className="space-y-8" variants={containerVariants} initial="hidden" animate="visible">
+      <motion.div variants={itemVariants}>
+        <h1 className="text-3xl font-bold mb-2">Staff Dashboard</h1>
+        <p className="text-muted-foreground">Overview of your day</p>
       </motion.div>
 
-      {/* Stats */}
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-3 gap-6"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        {stats.map((stat, index) => {
+      <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-6" variants={itemVariants}>
+        {stats.map((stat) => {
           const Icon = stat.icon
           return (
-            <motion.div key={index} variants={itemVariants}>
-              <Card className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-muted-foreground text-sm">{stat.label}</p>
-                    <p className="text-3xl font-bold mt-2">{stat.value}</p>
-                  </div>
-                  <Icon className={`w-8 h-8 ${stat.color}`} />
+            <Card key={stat.label} className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">{stat.label}</p>
+                  <p className="text-3xl font-bold mt-2">{stat.value}</p>
                 </div>
-              </Card>
-            </motion.div>
+                <Icon className={`w-8 h-8 ${stat.color}`} />
+              </div>
+            </Card>
           )
         })}
       </motion.div>
 
-      {/* Today's Appointments */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-      >
-        <h3 className="text-xl font-bold mb-4">Today's Appointments</h3>
-
+      <motion.div variants={itemVariants}>
+        <h2 className="text-2xl font-bold mb-4">Today&apos;s Appointments</h2>
         <div className="space-y-4">
-          {todayAppointments.map((appointment, index) => (
-            <motion.div
-              key={appointment.id}
-              className="p-4 rounded-lg border bg-card hover:shadow-lg transition-shadow"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-semibold">{appointment.serviceName}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {appointment.time} - {appointment.clientName}
-                  </p>
-                  <p className="text-sm text-muted-foreground">{appointment.clientEmail}</p>
+          {todayAppointments.length === 0 ? (
+            <Card className="p-8 text-center text-muted-foreground">No appointments scheduled for today.</Card>
+          ) : (
+            todayAppointments.map((appointment) => (
+              <Card key={appointment.id} className="p-6">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-semibold text-lg">{appointment.serviceName}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {appointment.date} at {appointment.time}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Client: {appointment.clientName}</p>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 capitalize">
+                    {appointment.status}
+                  </span>
                 </div>
-                <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-semibold">
-                  {appointment.status}
-                </span>
-              </div>
-            </motion.div>
-          ))}
+              </Card>
+            ))
+          )}
         </div>
       </motion.div>
-    </div>
+    </motion.div>
   )
 }

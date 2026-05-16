@@ -5,13 +5,82 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { Star } from "lucide-react"
-import { services, teamMembers, testimonials, mockProducts } from "@/lib/mock-data"
 import Image from "next/image"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ProductDetailModal } from "@/components/product-detail-modal"
 
+type FeaturedService = {
+  id: number
+  name: string
+  description: string | null
+  price: number
+  durationMinutes: number
+  image: string
+}
+
+type TeamMember = {
+  id: number
+  name: string
+  role: string
+  image: string
+  specialties: string[]
+}
+
+type Testimonial = {
+  id: number
+  name: string
+  text: string
+  rating: number
+}
+
+type Product = {
+  id: number
+  name: string
+  description: string
+  price: number
+  availability: string
+  mainImage: string
+  images: string[]
+  details: string
+}
+
 export default function Home() {
-  const [selectedProduct, setSelectedProduct] = useState<(typeof mockProducts)[0] | null>(null)
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [featuredServices, setFeaturedServices] = useState<FeaturedService[]>([])
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([])
+  const [products, setProducts] = useState<Product[]>([])
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [servicesRes, teamRes, reviewsRes, productsRes] = await Promise.all([
+          fetch("/api/public/services?limit=3&page=1"),
+          fetch("/api/public/team"),
+          fetch("/api/reviews?public=true"),
+          fetch("/api/public/products?limit=4"),
+        ])
+        if (servicesRes.ok) {
+          const data = await servicesRes.json()
+          setFeaturedServices(data.data ?? [])
+        }
+        if (teamRes.ok) {
+          setTeamMembers(await teamRes.json())
+        }
+        if (reviewsRes.ok) {
+          const data = await reviewsRes.json()
+          setTestimonials(data.data ?? [])
+        }
+        if (productsRes.ok) {
+          const data = await productsRes.json()
+          setProducts(data.data ?? [])
+        }
+      } catch (e) {
+        console.error("Failed to load home data", e)
+      }
+    }
+    load()
+  }, [])
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -85,7 +154,7 @@ export default function Home() {
             whileInView="visible"
             viewport={{ once: true }}
           >
-            {services.slice(0, 3).map((service) => (
+            {featuredServices.map((service) => (
               <motion.div
                 key={service.id}
                 className="p-6 rounded-lg border border-secondary bg-card hover:shadow-lg transition-shadow dark:border-secondary/30"
@@ -95,7 +164,7 @@ export default function Home() {
                 <p className="text-muted-foreground mb-4">{service.description}</p>
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-bold text-primary">${service.price}</span>
-                  <span className="text-sm text-muted-foreground">{service.duration} min</span>
+                  <span className="text-sm text-muted-foreground">{service.durationMinutes} min</span>
                 </div>
               </motion.div>
             ))}
@@ -131,7 +200,7 @@ export default function Home() {
             whileInView="visible"
             viewport={{ once: true }}
           >
-            {mockProducts.slice(0, 4).map((product) => (
+            {products.map((product) => (
               <motion.div
                 key={product.id}
                 className="rounded-lg border bg-card hover:shadow-lg transition-shadow overflow-hidden"

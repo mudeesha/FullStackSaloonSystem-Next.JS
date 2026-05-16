@@ -1,10 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Plus, Edit2, Trash2, X } from "lucide-react"
-import { mockProducts } from "@/lib/mock-data"
 import Image from "next/image"
 import { useToast } from "@/hooks/use-toast"
 
@@ -20,7 +19,18 @@ interface Product {
 }
 
 export default function AdminProductsPage() {
-  const [products, setProducts] = useState<Product[]>(mockProducts)
+  const [products, setProducts] = useState<Product[]>([])
+
+  const fetchProducts = () => {
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then((data) => setProducts(data.data ?? []))
+      .catch(console.error)
+  }
+
+  useEffect(() => {
+    fetchProducts()
+  }, [])
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
@@ -36,7 +46,7 @@ export default function AdminProductsPage() {
     details: "",
   })
 
-  const handleAddProduct = () => {
+  const handleAddProduct = async () => {
     if (!formData.name || !formData.description || formData.price <= 0) {
       toast({
         title: "Error",
@@ -46,22 +56,27 @@ export default function AdminProductsPage() {
       return
     }
 
-    const newProduct: Product = {
-      id: Math.max(...products.map((p) => p.id), 0) + 1,
-      ...formData,
-      price: Number(formData.price),
+    try {
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          price: Number(formData.price),
+          images: formData.images.filter(Boolean),
+        }),
+      })
+      if (!res.ok) throw new Error("Failed")
+      fetchProducts()
+      toast({ title: "Success", description: "Product added successfully" })
+      resetForm()
+      setIsAddModalOpen(false)
+    } catch {
+      toast({ title: "Error", description: "Failed to add product", variant: "destructive" })
     }
-
-    setProducts([...products, newProduct])
-    toast({
-      title: "Success",
-      description: "Product added successfully",
-    })
-    resetForm()
-    setIsAddModalOpen(false)
   }
 
-  const handleUpdateProduct = () => {
+  const handleUpdateProduct = async () => {
     if (!editingProduct) return
 
     if (!formData.name || !formData.description || formData.price <= 0) {
@@ -73,32 +88,36 @@ export default function AdminProductsPage() {
       return
     }
 
-    setProducts(
-      products.map((p) =>
-        p.id === editingProduct.id
-          ? {
-              ...p,
-              ...formData,
-              price: Number(formData.price),
-            }
-          : p,
-      ),
-    )
-
-    toast({
-      title: "Success",
-      description: "Product updated successfully",
-    })
-    resetForm()
-    setEditingProduct(null)
+    try {
+      const res = await fetch("/api/products", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingProduct.id,
+          ...formData,
+          price: Number(formData.price),
+          images: formData.images.filter(Boolean),
+        }),
+      })
+      if (!res.ok) throw new Error("Failed")
+      fetchProducts()
+      toast({ title: "Success", description: "Product updated successfully" })
+      resetForm()
+      setEditingProduct(null)
+    } catch {
+      toast({ title: "Error", description: "Failed to update product", variant: "destructive" })
+    }
   }
 
-  const handleDeleteProduct = (id: number) => {
-    setProducts(products.filter((p) => p.id !== id))
-    toast({
-      title: "Success",
-      description: "Product deleted successfully",
-    })
+  const handleDeleteProduct = async (id: number) => {
+    try {
+      const res = await fetch(`/api/products?id=${id}`, { method: "DELETE" })
+      if (!res.ok) throw new Error("Failed")
+      fetchProducts()
+      toast({ title: "Success", description: "Product deleted successfully" })
+    } catch {
+      toast({ title: "Error", description: "Failed to delete product", variant: "destructive" })
+    }
     setDeleteConfirm(null)
   }
 

@@ -7,8 +7,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useToast } from "@/hooks/use-toast"
-import { useState } from "react"
-import { ImageUpload } from "@/components/image-upload"
+import { useEffect } from "react"
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -20,67 +19,70 @@ type ProfileFormData = z.infer<typeof profileSchema>
 
 export default function ProfilePage() {
   const { toast } = useToast()
-  const [profileImage, setProfileImage] = useState<File | null>(null)
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
-    defaultValues: {
-      name: "John Doe",
-      email: "john@example.com",
-      phone: "(555) 123-4567",
-    },
   })
 
-  const onSubmit = (data: ProfileFormData) => {
-    toast({
-      title: "Profile Updated",
-      description: "Your profile has been updated successfully.",
-    })
+  useEffect(() => {
+    fetch("/api/users/profile")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user) {
+          reset({
+            name: data.user.name,
+            email: data.user.email,
+            phone: data.user.phone || "",
+          })
+        }
+      })
+      .catch(console.error)
+  }, [reset])
+
+  const onSubmit = async (data: ProfileFormData) => {
+    try {
+      const res = await fetch("/api/users/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: data.name, phone: data.phone }),
+      })
+      if (!res.ok) throw new Error("Failed")
+      toast({ title: "Profile Updated", description: "Your profile has been updated successfully." })
+    } catch {
+      toast({ title: "Error", description: "Failed to update profile.", variant: "destructive" })
+    }
   }
 
   return (
-    <div className="space-y-6">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+    <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <div>
         <h2 className="text-3xl font-bold mb-2">My Profile</h2>
         <p className="text-muted-foreground">Manage your account information</p>
-      </motion.div>
+      </div>
 
-      <motion.div
-        className="max-w-2xl p-8 rounded-lg border bg-card"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.1 }}
-      >
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium mb-2">Profile Image</label>
-            <ImageUpload onImageSelect={setProfileImage} label="Upload Profile Photo" />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Full Name</label>
-            <Input {...register("name")} className={errors.name ? "border-red-500" : ""} />
-            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Email</label>
-            <Input {...register("email")} type="email" className={errors.email ? "border-red-500" : ""} />
-            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Phone</label>
-            <Input {...register("phone")} className={errors.phone ? "border-red-500" : ""} />
-            {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>}
-          </div>
-
-          <Button type="submit">Save Changes</Button>
-        </form>
-      </motion.div>
-    </div>
+      <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl p-8 rounded-lg border bg-card space-y-6">
+        <div>
+          <label className="block text-sm font-medium mb-2">Full Name</label>
+          <Input {...register("name")} className={errors.name ? "border-red-500" : ""} />
+          {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-2">Email</label>
+          <Input {...register("email")} type="email" disabled className="bg-muted" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-2">Phone</label>
+          <Input {...register("phone")} className={errors.phone ? "border-red-500" : ""} />
+          {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>}
+        </div>
+        <Button type="submit" className="bg-primary hover:bg-[#B2223A] text-white">
+          Save Changes
+        </Button>
+      </form>
+    </motion.div>
   )
 }

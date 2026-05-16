@@ -1,72 +1,141 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { mockAppointments } from "@/lib/mock-data"
-import { Star } from "lucide-react"
+import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { useEffect, useState } from "react"
+import { useToast } from "@/hooks/use-toast"
+
+type Appointment = {
+  id: number
+  serviceName: string
+  date: string
+  time: string
+  status: string
+  staffName: string
+  review?: { id: number; rating: number; comment: string | null } | null
+}
 
 export default function HistoryPage() {
-  const completedAppointments = mockAppointments.filter((a) => a.status === "completed")
+  const { toast } = useToast()
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [reviewForm, setReviewForm] = useState<{ appointmentId: number; rating: number; comment: string } | null>(null)
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
-      },
-    },
+  const fetchAppointments = () => {
+    fetch("/api/appointments")
+      .then((res) => res.json())
+      .then((data) => setAppointments(data.data ?? []))
+      .catch(console.error)
   }
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.5 },
-    },
+  useEffect(() => {
+    fetchAppointments()
+  }, [])
+
+  const completedAppointments = appointments.filter((a) => a.status === "completed")
+
+  const submitReview = async () => {
+    if (!reviewForm) return
+    try {
+      const res = await fetch("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(reviewForm),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || "Failed")
+      }
+      toast({ title: "Review Submitted", description: "Thank you for your feedback!" })
+      setReviewForm(null)
+      fetchAppointments()
+    } catch (e) {
+      toast({
+        title: "Error",
+        description: e instanceof Error ? e.message : "Failed to submit review",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
     <div className="space-y-6">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+      <div>
         <h2 className="text-3xl font-bold mb-2">Booking History</h2>
-        <p className="text-muted-foreground">View your past appointments</p>
-      </motion.div>
+        <p className="text-muted-foreground">View past appointments and leave reviews</p>
+      </div>
 
-      <motion.div className="space-y-4" variants={containerVariants} initial="hidden" animate="visible">
+      <div className="space-y-4">
         {completedAppointments.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <p>No completed appointments yet</p>
-          </div>
+          <Card className="p-8 text-center text-muted-foreground">No completed appointments yet.</Card>
         ) : (
-          completedAppointments.map((appointment, index) => (
-            <motion.div key={appointment.id} className="p-6 rounded-lg border bg-card" variants={itemVariants}>
-              <div className="flex items-start justify-between mb-4">
+          completedAppointments.map((appointment) => (
+            <Card key={appointment.id} className="p-6">
+              <div className="flex items-start justify-between flex-wrap gap-4">
                 <div>
-                  <h3 className="text-lg font-semibold">{appointment.serviceName}</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="font-semibold text-lg">{appointment.serviceName}</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
                     {appointment.date} at {appointment.time}
                   </p>
+                  <p className="text-sm text-muted-foreground">with {appointment.staffName}</p>
+                  {appointment.review && (
+                    <p className="text-sm mt-2 text-yellow-600">
+                      Your review: {"★".repeat(appointment.review.rating)} — {appointment.review.comment}
+                    </p>
+                  )}
                 </div>
-                <span className="px-3 py-1 rounded-full bg-green-100 text-green-800 text-xs font-semibold">
-                  Completed
-                </span>
+                {!appointment.review && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setReviewForm({ appointmentId: appointment.id, rating: 5, comment: "" })
+                    }
+                  >
+                    Leave Review
+                  </Button>
+                )}
               </div>
 
-              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                <span>Staff: {appointment.staffName}</span>
-              </div>
-
-              <div className="flex items-center gap-1">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                ))}
-              </div>
-            </motion.div>
+              {reviewForm?.appointmentId === appointment.id && (
+                <div className="mt-4 p-4 border rounded-lg space-y-3">
+                  <div>
+                    <label className="text-sm font-medium">Rating (1-5)</label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={5}
+                      value={reviewForm.rating}
+                      onChange={(e) =>
+                        setReviewForm({ ...reviewForm, rating: Number(e.target.value) })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Comment</label>
+                    <Textarea
+                      value={reviewForm.comment}
+                      onChange={(e) =>
+                        setReviewForm({ ...reviewForm, comment: e.target.value })
+                      }
+                      rows={3}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={submitReview}>
+                      Submit Review
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setReviewForm(null)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </Card>
           ))
         )}
-      </motion.div>
+      </div>
     </div>
   )
 }

@@ -3,8 +3,7 @@
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { mockUsers, mockStaff } from "@/lib/mock-data"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { Edit, Trash2, Plus } from "lucide-react"
 import { ConfirmationModal } from "@/components/confirmation-modal"
@@ -12,7 +11,20 @@ import { FormModal } from "@/components/form-modal"
 
 export default function AdminUsersPage() {
   const { toast } = useToast()
-  const [users, setUsers] = useState([...mockUsers, ...mockStaff])
+  const [users, setUsers] = useState<
+    { id: number; name: string; email: string; phone: string; role: string; joinDate: string }[]
+  >([])
+
+  const fetchUsers = () => {
+    fetch("/api/users")
+      .then((res) => res.json())
+      .then((data) => setUsers(data.data ?? []))
+      .catch(console.error)
+  }
+
+  useEffect(() => {
+    fetchUsers()
+  }, [])
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; type: "delete" | "edit"; id: number }>({
     open: false,
     type: "delete",
@@ -24,12 +36,15 @@ export default function AdminUsersPage() {
   })
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", role: "customer" })
 
-  const handleDelete = (id: number) => {
-    setUsers(users.filter((u) => u.id !== id))
-    toast({
-      title: "User Deleted",
-      description: "User has been removed.",
-    })
+  const handleDelete = async (id: number) => {
+    try {
+      const res = await fetch(`/api/users?id=${id}`, { method: "DELETE" })
+      if (!res.ok) throw new Error("Failed")
+      fetchUsers()
+      toast({ title: "User Deleted", description: "User has been removed." })
+    } catch {
+      toast({ title: "Error", description: "Failed to delete user.", variant: "destructive" })
+    }
     setConfirmModal({ open: false, type: "delete", id: 0 })
   }
 
@@ -51,39 +66,32 @@ export default function AdminUsersPage() {
     }
   }
 
-  const handleSaveUser = () => {
-    if (formModal.type === "add") {
-      const newUser = {
-        id: Math.max(...users.map((u) => u.id), 0) + 1,
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        role: formData.role as "customer" | "staff",
-        joinDate: new Date().toLocaleDateString(),
+  const handleSaveUser = async () => {
+    try {
+      if (formModal.type === "add") {
+        const res = await fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...formData,
+            role: formData.role,
+            password: "ChangeMe123!",
+          }),
+        })
+        if (!res.ok) throw new Error("Failed")
+        toast({ title: "User Added", description: "New user has been added successfully." })
+      } else {
+        const res = await fetch("/api/users", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: formModal.id, ...formData, role: formData.role }),
+        })
+        if (!res.ok) throw new Error("Failed")
+        toast({ title: "User Updated", description: "User has been updated successfully." })
       }
-      setUsers([...users, newUser])
-      toast({
-        title: "User Added",
-        description: "New user has been added successfully.",
-      })
-    } else {
-      setUsers(
-        users.map((u) =>
-          u.id === formModal.id
-            ? {
-                ...u,
-                name: formData.name,
-                email: formData.email,
-                phone: formData.phone,
-                role: formData.role as "customer" | "staff",
-              }
-            : u,
-        ),
-      )
-      toast({
-        title: "User Updated",
-        description: "User has been updated successfully.",
-      })
+      fetchUsers()
+    } catch {
+      toast({ title: "Error", description: "Failed to save user.", variant: "destructive" })
     }
     setFormModal({ open: false, type: "add" })
   }

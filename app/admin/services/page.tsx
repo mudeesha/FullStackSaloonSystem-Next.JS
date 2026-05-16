@@ -77,7 +77,7 @@ export default function AdminServicesPage() {
       try {
         const res = await fetch('/api/users?role=STAFF')
         const data = await res.json()
-        setStaffMembers(data)
+        setStaffMembers(data.data ?? [])
       } catch (error) {
         console.error("Failed to fetch staff members", error)
       }

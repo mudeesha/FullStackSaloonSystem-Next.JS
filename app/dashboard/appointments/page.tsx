@@ -3,136 +3,113 @@
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { mockAppointments } from "@/lib/mock-data"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { X, Edit } from "lucide-react"
 import { ConfirmationModal } from "@/components/confirmation-modal"
 
+type Appointment = {
+  id: number
+  serviceName: string
+  date: string
+  time: string
+  status: string
+  staffName: string
+}
+
 export default function AppointmentsPage() {
   const { toast } = useToast()
-  const [appointments, setAppointments] = useState(mockAppointments)
+  const [appointments, setAppointments] = useState<Appointment[]>([])
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; type: "delete" | "edit"; id: number }>({
     open: false,
     type: "delete",
     id: 0,
   })
 
-  const handleDelete = (id: number) => {
-    setAppointments(appointments.filter((a) => a.id !== id))
-    toast({
-      title: "Appointment Cancelled",
-      description: "Your appointment has been cancelled successfully.",
-    })
+  const fetchAppointments = () => {
+    fetch("/api/appointments")
+      .then((res) => res.json())
+      .then((data) => setAppointments(data.data ?? []))
+      .catch(console.error)
+  }
+
+  useEffect(() => {
+    fetchAppointments()
+  }, [])
+
+  const handleDelete = async (id: number) => {
+    try {
+      const res = await fetch("/api/appointments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: "cancelled" }),
+      })
+      if (!res.ok) throw new Error("Failed")
+      fetchAppointments()
+      toast({
+        title: "Appointment Cancelled",
+        description: "Your appointment has been cancelled successfully.",
+      })
+    } catch {
+      toast({ title: "Error", description: "Failed to cancel appointment.", variant: "destructive" })
+    }
     setConfirmModal({ open: false, type: "delete", id: 0 })
   }
 
-  const handleEdit = (id: number) => {
-    toast({
-      title: "Edit Feature",
-      description: "Edit functionality would be implemented here.",
-    })
+  const handleEdit = () => {
+    toast({ title: "Edit Feature", description: "Edit functionality would be implemented here." })
     setConfirmModal({ open: false, type: "edit", id: 0 })
   }
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
-      },
-    },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.2 } },
   }
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.5 },
-    },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
   }
 
   return (
-    <div className="space-y-6">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-3xl font-bold">My Appointments</h2>
-            <p className="text-muted-foreground">Manage your salon appointments</p>
-          </div>
-          <Button asChild>
-            <Link href="/book">Book New Appointment</Link>
-          </Button>
-        </div>
+    <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
+      <motion.div variants={itemVariants} className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold">My Appointments</h2>
+        <Button className="bg-primary hover:bg-[#B2223A] text-white" asChild>
+          <Link href="/book">Book New</Link>
+        </Button>
       </motion.div>
 
-      <motion.div className="space-y-4" variants={containerVariants} initial="hidden" animate="visible">
+      <motion.div className="space-y-4" variants={containerVariants}>
         {appointments.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground mb-4">No appointments found</p>
-            <Button asChild>
-              <Link href="/book">Book Your First Appointment</Link>
-            </Button>
-          </div>
+          <p className="text-muted-foreground text-center py-8">No appointments found.</p>
         ) : (
-          appointments.map((appointment, index) => (
+          appointments.map((appointment) => (
             <motion.div
               key={appointment.id}
               className="p-6 rounded-lg border bg-card hover:shadow-lg transition-shadow"
               variants={itemVariants}
             >
               <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-4 mb-2">
-                    <h3 className="text-lg font-semibold">{appointment.serviceName}</h3>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        appointment.status === "confirmed"
-                          ? "bg-blue-100 text-blue-800"
-                          : appointment.status === "completed"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {appointment.status}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
-                    <div>
-                      <p className="font-medium text-foreground">Date</p>
-                      <p>{appointment.date}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">Time</p>
-                      <p>{appointment.time}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">Staff</p>
-                      <p>{appointment.staffName}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">Client</p>
-                      <p>{appointment.clientName}</p>
-                    </div>
-                  </div>
+                <div>
+                  <h3 className="text-lg font-semibold">{appointment.serviceName}</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {appointment.date} at {appointment.time}
+                  </p>
+                  <p className="text-sm text-muted-foreground">with {appointment.staffName}</p>
+                  <span className="inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 capitalize">
+                    {appointment.status}
+                  </span>
                 </div>
-                {appointment.status === "confirmed" && (
-                  <div className="flex gap-2 ml-4">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setConfirmModal({ open: true, type: "edit", id: appointment.id })}
-                    >
+                {(appointment.status === "pending" || appointment.status === "confirmed") && (
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => setConfirmModal({ open: true, type: "edit", id: appointment.id })}>
                       <Edit className="w-4 h-4" />
                     </Button>
                     <Button
                       size="sm"
-                      variant="ghost"
+                      variant="destructive"
                       onClick={() => setConfirmModal({ open: true, type: "delete", id: appointment.id })}
-                      className="text-red-500 hover:text-red-700"
                     >
                       <X className="w-4 h-4" />
                     </Button>
@@ -152,11 +129,11 @@ export default function AppointmentsPage() {
             ? "Are you sure you want to cancel this appointment?"
             : "Would you like to edit this appointment?"
         }
-        actionLabel={confirmModal.type === "delete" ? "Cancel" : "Edit"}
+        actionLabel={confirmModal.type === "delete" ? "Cancel Appointment" : "Edit"}
         isDestructive={confirmModal.type === "delete"}
-        onConfirm={() => (confirmModal.type === "delete" ? handleDelete(confirmModal.id) : handleEdit(confirmModal.id))}
+        onConfirm={() => (confirmModal.type === "delete" ? handleDelete(confirmModal.id) : handleEdit())}
         onCancel={() => setConfirmModal({ open: false, type: "delete", id: 0 })}
       />
-    </div>
+    </motion.div>
   )
 }

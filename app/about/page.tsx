@@ -2,10 +2,26 @@
 
 import { PublicLayout } from "@/components/layout/public-layout"
 import { motion } from "framer-motion"
-import { teamMembers } from "@/lib/mock-data"
+import { useEffect, useState } from "react"
 import { CheckCircle } from "lucide-react"
 
+type TeamMember = {
+  id: number
+  name: string
+  role: string
+  image: string
+  specialties: string[]
+}
+
 export default function AboutPage() {
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+
+  useEffect(() => {
+    fetch("/api/public/team")
+      .then((res) => res.json())
+      .then((data) => setTeamMembers(Array.isArray(data) ? data : []))
+      .catch(console.error)
+  }, [])
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {

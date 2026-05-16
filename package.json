@@ -7,7 +7,10 @@
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "npx tsx prisma/seed.ts",
+    "db:push": "prisma db push"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "latest",
@@ -42,6 +45,9 @@
     "tw-animate-css": "latest",
     "uuid": "^13.0.0",
     "zod": "^3.25.76"
+  },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
   },
   "devDependencies": {
     "@types/formidable": "^3.4.6",

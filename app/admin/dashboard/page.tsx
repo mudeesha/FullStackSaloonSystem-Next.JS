@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { Card } from "@/components/ui/card"
-import { mockAppointments, mockPayments, mockUsers } from "@/lib/mock-data"
+import { useEffect, useState } from "react"
 import {
   BarChart,
   Bar,
@@ -19,120 +19,57 @@ import {
 import { Users, Calendar, DollarSign, TrendingUp } from "lucide-react"
 
 export default function AdminDashboard() {
-  const totalRevenue = mockPayments.reduce((sum, p) => sum + p.amount, 0)
-  const totalAppointments = mockAppointments.length
-  const totalUsers = mockUsers.length
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    totalAppointments: 0,
+    totalUsers: 0,
+    conversionRate: "0%",
+  })
+  const [chartData, setChartData] = useState<{ name: string; appointments: number; revenue: number }[]>([])
+  const [statusData, setStatusData] = useState<{ name: string; value: number; fill: string }[]>([])
 
-  const stats = [
-    {
-      label: "Total Revenue",
-      value: `$${totalRevenue}`,
-      icon: DollarSign,
-      color: "text-green-500",
-    },
-    {
-      label: "Total Appointments",
-      value: totalAppointments,
-      icon: Calendar,
-      color: "text-blue-500",
-    },
-    {
-      label: "Total Users",
-      value: totalUsers,
-      icon: Users,
-      color: "text-purple-500",
-    },
-    {
-      label: "Conversion Rate",
-      value: "85%",
-      icon: TrendingUp,
-      color: "text-orange-500",
-    },
+  useEffect(() => {
+    fetch("/api/dashboard/stats")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.stats) setStats(data.stats)
+        if (data.chartData) setChartData(data.chartData)
+        if (data.statusData) setStatusData(data.statusData)
+      })
+      .catch(console.error)
+  }, [])
+
+  const statCards = [
+    { label: "Total Revenue", value: `$${stats.totalRevenue.toFixed(0)}`, icon: DollarSign, color: "text-green-500" },
+    { label: "Total Appointments", value: stats.totalAppointments, icon: Calendar, color: "text-blue-500" },
+    { label: "Total Users", value: stats.totalUsers, icon: Users, color: "text-purple-500" },
+    { label: "Conversion Rate", value: stats.conversionRate, icon: TrendingUp, color: "text-orange-500" },
   ]
-
-  const chartData = [
-    { name: "Mon", appointments: 4, revenue: 240 },
-    { name: "Tue", appointments: 3, revenue: 180 },
-    { name: "Wed", appointments: 5, revenue: 300 },
-    { name: "Thu", appointments: 4, revenue: 240 },
-    { name: "Fri", appointments: 6, revenue: 360 },
-    { name: "Sat", appointments: 3, revenue: 180 },
-    { name: "Sun", appointments: 0, revenue: 0 },
-  ]
-
-  const statusData = [
-    { name: "Confirmed", value: 8, fill: "#3b82f6" },
-    { name: "Completed", value: 5, fill: "#10b981" },
-    { name: "Pending", value: 2, fill: "#f59e0b" },
-  ]
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
-      },
-    },
-  }
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.5 },
-    },
-  }
 
   return (
-    <div className="space-y-8">
-      <motion.div
-        className="mb-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <h2 className="text-3xl font-bold mb-2">Dashboard Overview</h2>
-        <p className="text-muted-foreground">Key metrics and analytics</p>
-      </motion.div>
+    <motion.div className="space-y-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <h1 className="text-3xl font-bold">Admin Dashboard</h1>
 
-      {/* Stats */}
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        {stats.map((stat, index) => {
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {statCards.map((stat) => {
           const Icon = stat.icon
           return (
-            <motion.div key={index} variants={itemVariants}>
-              <Card className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-muted-foreground text-sm">{stat.label}</p>
-                    <p className="text-2xl font-bold mt-2">{stat.value}</p>
-                  </div>
-                  <Icon className={`w-8 h-8 ${stat.color}`} />
+            <Card key={stat.label} className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">{stat.label}</p>
+                  <p className="text-3xl font-bold mt-2">{stat.value}</p>
                 </div>
-              </Card>
-            </motion.div>
+                <Icon className={`w-8 h-8 ${stat.color}`} />
+              </div>
+            </Card>
           )
         })}
-      </motion.div>
+      </div>
 
-      {/* Charts */}
-      <motion.div
-        className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-      >
-        {/* Bar Chart */}
-        <Card className="lg:col-span-2 p-6">
-          <h3 className="font-semibold mb-4">Weekly Performance</h3>
+      <motion.div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold mb-4">Weekly Appointments & Revenue</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -140,18 +77,17 @@ export default function AdminDashboard() {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="appointments" fill="#3b82f6" />
-              <Bar dataKey="revenue" fill="#10b981" />
+              <Bar dataKey="appointments" fill="#E91E63" />
+              <Bar dataKey="revenue" fill="#3b82f6" />
             </BarChart>
           </ResponsiveContainer>
         </Card>
 
-        {/* Pie Chart */}
         <Card className="p-6">
-          <h3 className="font-semibold mb-4">Appointment Status</h3>
+          <h3 className="text-lg font-semibold mb-4">Appointment Status</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
-              <Pie data={statusData} cx="50%" cy="50%" labelLine={false} label outerRadius={80} dataKey="value">
+              <Pie data={statusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
                 {statusData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.fill} />
                 ))}
@@ -161,6 +97,6 @@ export default function AdminDashboard() {
           </ResponsiveContainer>
         </Card>
       </motion.div>
-    </div>
+    </motion.div>
   )
 }

@@ -30,12 +30,26 @@ export default function ContactPage() {
     resolver: zodResolver(contactSchema),
   })
 
-  const onSubmit = (data: ContactFormData) => {
-    toast({
-      title: "Message Sent",
-      description: "We'll get back to you as soon as possible!",
-    })
-    reset()
+  const onSubmit = async (data: ContactFormData) => {
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) throw new Error("Failed")
+      toast({
+        title: "Message Sent",
+        description: "We'll get back to you as soon as possible!",
+      })
+      reset()
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   const contactInfo = [
