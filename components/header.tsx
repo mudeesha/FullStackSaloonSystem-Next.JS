@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Menu, X, LogOut, LayoutDashboard, User } from "lucide-react"
 import { useState } from "react"
@@ -45,7 +46,7 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-[#1a1a1a] border-b border-border">
+    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
       <div className="mx-auto flex h-16 max-w-full items-center justify-between px-6 lg:px-12">
         {/* Logo */}
         <Link href="/" className="flex shrink-0 items-center">
@@ -66,7 +67,7 @@ export function Header() {
               key={link.href}
               href={link.href}
               className={`text-xs font-medium tracking-widest transition-colors ${
-                isActive(link.href) ? "text-primary border-b border-primary pb-1" : "text-white/80 hover:text-primary"
+                isActive(link.href) ? "text-primary border-b border-primary pb-1" : "text-foreground/70 hover:text-primary"
               }`}
             >
               {link.label}
@@ -76,13 +77,15 @@ export function Header() {
 
         {/* Right Side: Auth + CTA */}
         <div className="flex items-center gap-4">
+          <ThemeToggle />
+
           {!loading && !isLoggedIn && (
             <div className="hidden items-center gap-3 md:flex">
-              <Button variant="ghost" asChild size="sm" className="text-white/80 hover:text-white text-xs font-medium">
+              <Button variant="ghost" asChild size="sm" className="text-foreground/70 hover:text-foreground text-xs font-medium">
                 <Link href="/login">Login</Link>
               </Button>
-              <span className="text-white/30">|</span>
-              <Button variant="ghost" asChild size="sm" className="text-white/80 hover:text-white text-xs font-medium">
+              <span className="text-border">|</span>
+              <Button variant="ghost" asChild size="sm" className="text-foreground/70 hover:text-foreground text-xs font-medium">
                 <Link href="/register">Sign Up</Link>
               </Button>
             </div>
@@ -93,7 +96,7 @@ export function Header() {
               <Button
                 variant="outline"
                 size="icon"
-                className="h-10 w-10 shrink-0 border-white/30 text-white hover:bg-white/10"
+                className="h-10 w-10 shrink-0"
                 aria-label="Account menu"
                 aria-expanded={accountMenuOpen}
                 onClick={() => setAccountMenuOpen((open) => !open)}
@@ -109,15 +112,15 @@ export function Header() {
                     aria-label="Close menu"
                     onClick={() => setAccountMenuOpen(false)}
                   />
-                  <div className="absolute right-0 z-50 mt-2 w-52 rounded-lg border border-border bg-[#1a1a1a] py-1 shadow-lg">
-                    <p className="border-b border-border px-4 py-2 text-xs text-white/60 truncate">{user?.name}</p>
+                  <div className="absolute right-0 z-50 mt-2 w-52 rounded-lg border border-border bg-card py-1 shadow-lg">
+                    <p className="border-b border-border px-4 py-2 text-xs text-muted-foreground truncate">{user?.name}</p>
                     {accountLinks.map((link) => {
                       const Icon = link.icon
                       return (
                         <Link
                           key={link.href}
                           href={link.href}
-                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-white/80 hover:text-white hover:bg-white/5"
+                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-accent"
                           onClick={closeMenus}
                         >
                           <Icon className="h-4 w-4" />
@@ -128,7 +131,7 @@ export function Header() {
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-destructive hover:bg-white/5"
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-destructive hover:bg-accent"
                     >
                       <LogOut className="h-4 w-4" />
                       Logout
@@ -146,7 +149,7 @@ export function Header() {
           <Button
             variant="outline"
             size="icon"
-            className="h-10 w-10 md:hidden border-white/30 text-white hover:bg-white/10"
+            className="h-10 w-10 md:hidden"
             aria-label="Navigation menu"
             onClick={() => setMobileNavOpen((open) => !open)}
           >
@@ -156,14 +159,14 @@ export function Header() {
       </div>
 
       {mobileNavOpen && (
-        <div className="border-t border-border bg-[#1a1a1a] px-4 py-4 md:hidden">
+        <div className="border-t border-border bg-background px-4 py-4 md:hidden">
           <nav className="space-y-2 mb-4">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className={`block rounded-md px-3 py-2 text-sm font-medium ${
-                  isActive(link.href) ? "bg-primary/10 text-primary" : "text-white/70 hover:text-white"
+                  isActive(link.href) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"
                 }`}
                 onClick={closeMenus}
               >
@@ -174,7 +177,7 @@ export function Header() {
 
           {!loading && !isLoggedIn && (
             <div className="flex flex-col gap-2 border-t border-border pt-4">
-              <Button variant="outline" asChild className="text-white border-white/30 hover:bg-white/10">
+              <Button variant="outline" asChild>
                 <Link href="/login" onClick={closeMenus}>
                   Login
                 </Link>
