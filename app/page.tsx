@@ -108,28 +108,33 @@ export default function Home() {
 
   return (
     <PublicLayout>
-      <section className="relative py-20 md:py-32 overflow-hidden">
+      <section className="relative min-h-[600px] overflow-hidden bg-background">
         <div className="absolute inset-0">
-          <Image src="/ns-hero.jpg" alt="Salon hero" fill className="object-cover" priority />
-          <div className="absolute inset-0 bg-black/30"></div>
+          <Image src="/hero.png" alt="NS Salon & Bridal" fill className="object-cover" priority />
         </div>
-        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-full flex items-center justify-center min-h-[600px]">
           <motion.div
-            className="mx-auto max-w-3xl text-center text-white"
+            className="mx-auto max-w-2xl text-center"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-balance">Your Premier Salon Experience</h1>
-            <p className="text-lg md:text-xl mb-8 text-balance text-white/90">
-              Discover luxury beauty and wellness services in a relaxing atmosphere. Book your appointment today.
+            <p className="text-primary text-sm md:text-base font-medium tracking-widest mb-4">NS SALON & BRIDAL</p>
+            <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-balance leading-tight">Where Bridal Beauty Meets Modern Elegance</h1>
+            <div className="flex justify-center mb-8">
+              <div className="h-px w-16 bg-primary"></div>
+              <div className="mx-4 text-primary">✦</div>
+              <div className="h-px w-16 bg-primary"></div>
+            </div>
+            <p className="text-base md:text-lg mb-8 text-balance max-w-xl mx-auto">
+              Bridal makeup, hair styling, grooming and salon services for your special day.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-primary hover:bg-[#B2223A] text-white" asChild>
+              <Button size="lg" className="bg-primary hover:bg-accent text-white font-medium" asChild>
                 <Link href="/book">Book Now</Link>
               </Button>
-              <Button size="lg" variant="outline" asChild className="bg-white/10 text-white border-white hover:bg-white/20">
-                <Link href="/services">View Services</Link>
+              <Button size="lg" variant="outline" asChild className="border-primary text-primary hover:bg-primary/5 font-medium">
+                <Link href="/services">Explore Services</Link>
               </Button>
             </div>
           </motion.div>
@@ -137,18 +142,23 @@ export default function Home() {
       </section>
 
       {/* Featured Services */}
-      <section className="py-16 md:py-24">
+      <section className="py-16 md:py-24 bg-background">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
-            className="mb-12 text-center"
+            className="mb-16 text-center"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Services</h2>
-            <p className="text-muted-foreground max-w-3xl mx-auto text-lg leading-relaxed">
-              We offer a comprehensive range of beauty treatments designed to meet all your needs and exceed your expectations. Our expert team is dedicated to providing you with an exceptional experience, using the latest techniques and top-quality products. Whether you&apos;re looking for a refreshing new look or a relaxing retreat, we have the perfect solution to enhance your natural beauty and boost your confidence. Experience the epitome of beauty at Liyo Salon, where your satisfaction is our top priority.
+            <div className="flex justify-center mb-4">
+              <div className="h-px w-12 bg-primary"></div>
+              <div className="mx-3 text-primary text-lg">✦</div>
+              <div className="h-px w-12 bg-primary"></div>
+            </div>
+            <h2 className="font-serif text-4xl md:text-5xl font-bold mb-6">Our Services</h2>
+            <p className="text-foreground/70 max-w-3xl mx-auto text-base md:text-lg leading-relaxed">
+              We offer a comprehensive range of beauty treatments designed to meet all your needs and exceed your expectations. Our expert team is dedicated to providing you with an exceptional experience, using the latest techniques and top-quality products.
             </p>
           </motion.div>
 
@@ -167,7 +177,7 @@ export default function Home() {
               {featuredServices.map((service) => (
                 <motion.div
                   key={service.id}
-                  className="flex flex-col overflow-hidden rounded-lg border border-secondary bg-card transition-shadow hover:shadow-lg dark:border-secondary/30"
+                  className="flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:shadow-xl hover:border-primary"
                   variants={itemVariants}
                 >
                   <div className="relative h-48 w-full bg-muted">
@@ -180,15 +190,17 @@ export default function Home() {
                     />
                   </div>
                   <div className="flex flex-1 flex-col p-6">
-                    <h3 className="mb-2 text-xl font-semibold">{service.name}</h3>
-                    <p className="mb-4 flex-1 text-sm text-muted-foreground line-clamp-2">
+                    <h3 className="mb-2 text-lg font-serif font-bold">{service.name}</h3>
+                    <p className="mb-4 flex-1 text-sm text-foreground/60 line-clamp-2">
                       {service.description}
                     </p>
-                    <div className="mb-4 flex items-center justify-between">
-                      <span className="text-lg font-bold text-primary">${service.price}</span>
-                      <span className="text-sm text-muted-foreground">{service.durationMinutes} min</span>
+                    <div className="mb-4 flex items-center justify-between border-t border-border pt-4">
+                      <span className="text-base font-semibold text-primary">${service.price}</span>
+                      <span className="text-xs text-foreground/50 flex items-center gap-1">
+                        <span>⏱</span> {service.durationMinutes} min
+                      </span>
                     </div>
-                    <Button className="w-full bg-primary text-white hover:bg-[#B2223A]" asChild size="sm">
+                    <Button className="w-full bg-primary text-white hover:bg-accent font-medium" asChild size="sm">
                       <Link href={`/book?service=${service.id}`}>Book Now</Link>
                     </Button>
                   </div>
@@ -198,25 +210,30 @@ export default function Home() {
           )}
 
           <div className="text-center mt-12">
-            <Button className="bg-primary hover:bg-[#B2223A] text-white" asChild>
+            <Button variant="outline" className="border-primary text-primary hover:bg-primary/5 font-medium" asChild>
               <Link href="/services">View All Services</Link>
             </Button>
           </div>
         </div>
       </section>
 
-      <section className="bg-secondary/10 py-16 md:py-24 dark:bg-secondary/5">
+      <section className="py-16 md:py-24 bg-background">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
-            className="mb-12 text-center"
+            className="mb-16 text-center"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
           >
-            <h2 className="mb-4 text-3xl font-bold md:text-4xl">Our Products</h2>
-            <p className="text-muted-foreground max-w-3xl mx-auto text-lg leading-relaxed">
-              Discover the finest selection of beauty products at Liyo Salon, carefully curated to ensure you achieve salon-quality results at home. Our range includes top-tier brands and exclusive items that cater to all your hair, skin, and beauty needs. Each product is chosen for its superior quality and effectiveness, helping you maintain and enhance your natural beauty between visits.
+            <div className="flex justify-center mb-4">
+              <div className="h-px w-12 bg-primary"></div>
+              <div className="mx-3 text-primary text-lg">✦</div>
+              <div className="h-px w-12 bg-primary"></div>
+            </div>
+            <h2 className="mb-6 font-serif text-4xl md:text-5xl font-bold">Our Products</h2>
+            <p className="text-foreground/70 max-w-3xl mx-auto text-base md:text-lg leading-relaxed">
+              Discover the finest selection of beauty products carefully curated to ensure you achieve salon-quality results at home.
             </p>
           </motion.div>
 
@@ -269,23 +286,28 @@ export default function Home() {
       </section>
 
       {/* Team Section */}
-      <section className="py-16 md:py-24">
+      <section className="py-16 md:py-24 bg-background">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
-            className="text-center mb-12"
+            className="text-center mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Meet Our Team</h2>
-            <p className="text-muted-foreground max-w-3xl mx-auto text-lg leading-relaxed">
-              At Liyo Salon, our talented team is the heart of our success. Led by the visionary Dhanushka Chathuranga, our professionals are dedicated to delivering exceptional beauty services. Each team member brings a wealth of experience and a passion for excellence, ensuring you receive personalized care and outstanding results. We take pride in our friendly, skilled staff who are here to make your salon experience unforgettable.
+            <div className="flex justify-center mb-4">
+              <div className="h-px w-12 bg-primary"></div>
+              <div className="mx-3 text-primary text-lg">✦</div>
+              <div className="h-px w-12 bg-primary"></div>
+            </div>
+            <h2 className="font-serif text-4xl md:text-5xl font-bold mb-6">Meet Our Team</h2>
+            <p className="text-foreground/70 max-w-3xl mx-auto text-base md:text-lg leading-relaxed">
+              At Liyo Salon, our talented team is the heart of our success. Led by the visionary Dhanushka Chathuranga, our professionals are dedicated to delivering exceptional beauty services.
             </p>
           </motion.div>
 
           <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+            className="grid grid-cols-1 md:grid-cols-2 gap-8"
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
@@ -294,21 +316,26 @@ export default function Home() {
             {teamMembers.map((member) => (
               <motion.div
                 key={member.id}
-                className="flex flex-col items-center rounded-lg border bg-card p-4 text-center"
+                className="flex flex-col items-center rounded-2xl border border-border bg-card p-8 text-center transition-all hover:border-primary hover:shadow-lg"
                 variants={itemVariants}
               >
-                <div className="relative mb-4 h-48 w-full overflow-hidden rounded-lg bg-muted">
+                <div className="relative mb-6 h-64 w-full overflow-hidden rounded-xl bg-muted">
                   <Image
                     src={member.image || "/professional-woman-stylist.jpg"}
                     alt={member.name}
                     fill
                     className="object-cover"
-                    sizes="(max-width: 768px) 100vw, 25vw"
+                    sizes="(max-width: 768px) 100vw, 50vw"
                   />
                 </div>
-                <h3 className="text-lg font-semibold">{member.name}</h3>
-                <p className="mb-2 text-sm text-primary">{member.role}</p>
-                <p className="text-xs text-muted-foreground">
+                <div className="flex justify-center mb-4">
+                  <div className="h-px w-8 bg-primary"></div>
+                  <div className="mx-2 text-primary text-sm">✦</div>
+                  <div className="h-px w-8 bg-primary"></div>
+                </div>
+                <h3 className="font-serif text-2xl font-bold mb-2">{member.name}</h3>
+                <p className="mb-3 text-sm text-primary font-medium">{member.role}</p>
+                <p className="text-xs text-foreground/50">
                   {member.specialties?.length ? member.specialties.join(", ") : "Salon professional"}
                 </p>
               </motion.div>
@@ -318,17 +345,22 @@ export default function Home() {
       </section>
 
       {/* Testimonials */}
-      <section className="bg-secondary/10 py-16 md:py-24 dark:bg-secondary/5">
+      <section className="bg-background py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
-            className="mb-12 text-center"
+            className="mb-16 text-center"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
           >
-            <h2 className="mb-4 text-3xl font-bold md:text-4xl">What Our Clients Say</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">Real experiences from our satisfied customers</p>
+            <div className="flex justify-center mb-4">
+              <div className="h-px w-12 bg-primary"></div>
+              <div className="mx-3 text-primary text-lg">✦</div>
+              <div className="h-px w-12 bg-primary"></div>
+            </div>
+            <h2 className="mb-6 font-serif text-4xl md:text-5xl font-bold">What Our Clients Say</h2>
+            <p className="text-foreground/70 max-w-2xl mx-auto text-base md:text-lg">Real experiences from our satisfied customers</p>
           </motion.div>
 
           <motion.div
@@ -341,7 +373,7 @@ export default function Home() {
             {testimonials.map((testimonial) => (
               <motion.div
                 key={testimonial.id}
-                className="p-6 rounded-lg border border-secondary bg-card dark:border-secondary/30"
+                className="p-6 rounded-xl border border-border bg-card transition-all hover:border-primary hover:shadow-lg"
                 variants={itemVariants}
               >
                 <div className="flex gap-1 mb-4">
@@ -349,41 +381,50 @@ export default function Home() {
                     <Star key={i} className="w-4 h-4 fill-primary text-primary" />
                   ))}
                 </div>
-                <p className="text-muted-foreground mb-4">"{testimonial.text}"</p>
-                <p className="font-semibold">{testimonial.name}</p>
+                <p className="text-foreground/70 mb-4 italic">"{testimonial.text}"</p>
+                <p className="font-semibold text-foreground">{testimonial.name}</p>
               </motion.div>
             ))}
           </motion.div>
         </div>
       </section>
 
-      <section className="bg-primary py-16 text-white md:py-24 dark:bg-primary">
+      <section className="bg-background py-16 md:py-24 border-t border-border">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
-            className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center"
+            className="grid grid-cols-1 md:grid-cols-3 gap-8"
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
           >
-            <motion.div variants={itemVariants}>
-              <div className="text-4xl md:text-5xl font-bold mb-2">500+</div>
-              <p className="text-lg">Happy Clients</p>
+            <motion.div variants={itemVariants} className="text-center p-6 rounded-xl border border-border bg-card">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl text-primary">👥</span>
+              </div>
+              <div className="font-serif text-4xl md:text-5xl font-bold mb-2 text-primary">500+</div>
+              <p className="text-foreground/70 text-lg">Happy Clients</p>
             </motion.div>
-            <motion.div variants={itemVariants}>
-              <div className="text-4xl md:text-5xl font-bold mb-2">10+</div>
-              <p className="text-lg">Expert Staff</p>
+            <motion.div variants={itemVariants} className="text-center p-6 rounded-xl border border-border bg-card">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl text-primary">⭐</span>
+              </div>
+              <div className="font-serif text-4xl md:text-5xl font-bold mb-2 text-primary">10+</div>
+              <p className="text-foreground/70 text-lg">Expert Staff</p>
             </motion.div>
-            <motion.div variants={itemVariants}>
-              <div className="text-4xl md:text-5xl font-bold mb-2">15+</div>
-              <p className="text-lg">Services</p>
+            <motion.div variants={itemVariants} className="text-center p-6 rounded-xl border border-border bg-card">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl text-primary">✨</span>
+              </div>
+              <div className="font-serif text-4xl md:text-5xl font-bold mb-2 text-primary">15+</div>
+              <p className="text-foreground/70 text-lg">Services</p>
             </motion.div>
           </motion.div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 md:py-24">
+      <section className="py-16 md:py-24 bg-background">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
             className="mx-auto max-w-2xl text-center"
@@ -392,11 +433,16 @@ export default function Home() {
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Transform?</h2>
-            <p className="text-lg text-muted-foreground mb-8">
+            <div className="flex justify-center mb-4">
+              <div className="h-px w-12 bg-primary"></div>
+              <div className="mx-3 text-primary text-lg">✦</div>
+              <div className="h-px w-12 bg-primary"></div>
+            </div>
+            <h2 className="font-serif text-4xl md:text-5xl font-bold mb-6">Ready to Transform?</h2>
+            <p className="text-lg text-foreground/70 mb-8">
               Book your appointment today and experience the difference
             </p>
-            <Button size="lg" className="bg-primary hover:bg-[#B2223A] text-white" asChild>
+            <Button size="lg" className="bg-primary hover:bg-accent text-white font-medium px-8" asChild>
               <Link href="/book">Book Your Appointment</Link>
             </Button>
           </motion.div>

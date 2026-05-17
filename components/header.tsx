@@ -47,25 +47,26 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex shrink-0 items-center">
           <Image
-            src="/salon-logo.png"
-            alt="Salon & Bridal Logo"
-            width={140}
-            height={40}
-            className="h-10 w-auto"
+            src="/logo.png"
+            alt="NS Salon & Bridal Logo"
+            width={200}
+            height={50}
+            className="h-12 w-auto"
+            priority
           />
         </Link>
 
-        <nav className="hidden items-center gap-6 md:flex lg:gap-8">
+        <nav className="hidden items-center gap-8 md:flex">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={`text-sm font-medium transition-colors ${
-                isActive(link.href) ? "text-primary" : "text-muted-foreground hover:text-foreground"
+              className={`text-sm font-medium tracking-wide transition-colors ${
+                isActive(link.href) ? "text-primary border-b-2 border-primary pb-2" : "text-foreground hover:text-primary"
               }`}
             >
               {link.label}
