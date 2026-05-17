@@ -108,26 +108,27 @@ export default function Home() {
 
   return (
     <PublicLayout>
-      <section className="relative py-20 md:py-32 bg-gradient-to-br from-secondary/20 to-background overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <Image src="/images/hero-banner.jpg" alt="Salon hero" fill className="object-cover" priority />
+      <section className="relative py-20 md:py-32 overflow-hidden">
+        <div className="absolute inset-0">
+          <Image src="/ns-hero.jpg" alt="Salon hero" fill className="object-cover" priority />
+          <div className="absolute inset-0 bg-black/30"></div>
         </div>
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
-            className="mx-auto max-w-3xl text-center"
+            className="mx-auto max-w-3xl text-center text-white"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
             <h1 className="text-4xl md:text-6xl font-bold mb-6 text-balance">Your Premier Salon Experience</h1>
-            <p className="text-lg md:text-xl text-muted-foreground mb-8 text-balance">
+            <p className="text-lg md:text-xl mb-8 text-balance text-white/90">
               Discover luxury beauty and wellness services in a relaxing atmosphere. Book your appointment today.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="bg-primary hover:bg-[#B2223A] text-white" asChild>
                 <Link href="/book">Book Now</Link>
               </Button>
-              <Button size="lg" variant="outline" asChild>
+              <Button size="lg" variant="outline" asChild className="bg-white/10 text-white border-white hover:bg-white/20">
                 <Link href="/services">View Services</Link>
               </Button>
             </div>
@@ -145,9 +146,9 @@ export default function Home() {
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Featured Services</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Explore our most popular beauty and wellness services
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Services</h2>
+            <p className="text-muted-foreground max-w-3xl mx-auto text-lg leading-relaxed">
+              We offer a comprehensive range of beauty treatments designed to meet all your needs and exceed your expectations. Our expert team is dedicated to providing you with an exceptional experience, using the latest techniques and top-quality products. Whether you&apos;re looking for a refreshing new look or a relaxing retreat, we have the perfect solution to enhance your natural beauty and boost your confidence. Experience the epitome of beauty at Liyo Salon, where your satisfaction is our top priority.
             </p>
           </motion.div>
 
@@ -213,9 +214,9 @@ export default function Home() {
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
           >
-            <h2 className="mb-4 text-3xl font-bold md:text-4xl">Featured Products</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Premium beauty and wellness products for your home care routine
+            <h2 className="mb-4 text-3xl font-bold md:text-4xl">Our Products</h2>
+            <p className="text-muted-foreground max-w-3xl mx-auto text-lg leading-relaxed">
+              Discover the finest selection of beauty products at Liyo Salon, carefully curated to ensure you achieve salon-quality results at home. Our range includes top-tier brands and exclusive items that cater to all your hair, skin, and beauty needs. Each product is chosen for its superior quality and effectiveness, helping you maintain and enhance your natural beauty between visits.
             </p>
           </motion.div>
 
@@ -278,8 +279,8 @@ export default function Home() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Meet Our Team</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Expert professionals dedicated to your beauty and wellness
+            <p className="text-muted-foreground max-w-3xl mx-auto text-lg leading-relaxed">
+              At Liyo Salon, our talented team is the heart of our success. Led by the visionary Dhanushka Chathuranga, our professionals are dedicated to delivering exceptional beauty services. Each team member brings a wealth of experience and a passion for excellence, ensuring you receive personalized care and outstanding results. We take pride in our friendly, skilled staff who are here to make your salon experience unforgettable.
             </p>
           </motion.div>
 

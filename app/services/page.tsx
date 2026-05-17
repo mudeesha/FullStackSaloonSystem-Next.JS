@@ -199,20 +199,19 @@ export default function ServicesPage() {
       <section className="py-12 md:py-20">
         <div className="container px-4">
           {/* Header with Search */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-12 gap-6">
-            <div className="flex-1">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-              >
-                <h1 className="text-4xl md:text-5xl font-bold mb-4">Our Services</h1>
-                <p className="text-lg text-muted-foreground max-w-2xl">
-                  Explore our comprehensive range of beauty and wellness services
-                </p>
-              </motion.div>
-            </div>
-            <div className="flex-shrink-0">
+          <div className="mb-12">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="mb-6"
+            >
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">Our Services</h1>
+              <p className="text-lg text-muted-foreground max-w-3xl">
+                Explore our comprehensive range of beauty and wellness services
+              </p>
+            </motion.div>
+            <div className="w-full max-w-sm">
               <SearchBar 
                 onSearch={(value) => handleSearch(value)} 
                 placeholder="Search services..." 
