@@ -2,10 +2,12 @@
 
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { CheckCircle, RotateCcw } from "lucide-react"
 import { ConfirmationModal } from "@/components/confirmation-modal"
+import { SearchBar } from "@/components/search-bar"
+import { matchesListSearch } from "@/lib/list-search"
 
 type Payment = {
   id: number
@@ -21,6 +23,7 @@ type Payment = {
 export default function AdminPaymentsPage() {
   const { toast } = useToast()
   const [payments, setPayments] = useState<Payment[]>([])
+  const [search, setSearch] = useState("")
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; type: "paid" | "refund"; id: number }>({
     open: false,
     type: "paid",
@@ -56,20 +59,43 @@ export default function AdminPaymentsPage() {
 
   const totalRevenue = payments.filter((p) => p.status === "paid").reduce((sum, p) => sum + p.amount, 0)
 
+  const filteredPayments = useMemo(
+    () =>
+      payments.filter((p) =>
+        matchesListSearch(search, [
+          p.id,
+          p.appointmentId,
+          p.amount,
+          p.clientName,
+          p.serviceName,
+          p.status,
+          p.method,
+          p.date,
+        ]),
+      ),
+    [payments, search],
+  )
+
   return (
     <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div>
-        <h2 className="text-3xl font-bold mb-2">Payments</h2>
-        <p className="text-muted-foreground">Total paid revenue: ${totalRevenue.toFixed(2)}</p>
+        <h2 className="mb-2 text-3xl font-bold">Payments</h2>
+        <p className="mb-4 text-muted-foreground">Total paid revenue: ${totalRevenue.toFixed(2)}</p>
+        <SearchBar
+          onSearch={setSearch}
+          placeholder="Search by appointment ID, client, service, status..."
+        />
       </div>
 
       <div className="space-y-4">
-        {payments.map((payment) => (
+        {filteredPayments.map((payment) => (
           <div key={payment.id} className="p-6 rounded-lg border bg-card flex justify-between items-center">
             <div>
-              <p className="font-semibold">${payment.amount} — {payment.serviceName || `Appointment #${payment.appointmentId}`}</p>
+              <p className="font-semibold">
+                ${payment.amount} — {payment.serviceName || "Service"}
+              </p>
               <p className="text-sm text-muted-foreground">
-                {payment.clientName} · {payment.date} · {payment.method}
+                Appointment #{payment.appointmentId} · {payment.clientName} · {payment.date} · {payment.method}
               </p>
               <span className="inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold capitalize bg-muted">
                 {payment.status}

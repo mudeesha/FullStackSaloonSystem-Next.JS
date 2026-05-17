@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
+import { SearchBar } from "@/components/search-bar"
+import { matchesListSearch } from "@/lib/list-search"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Plus, Edit2, Trash2, X } from "lucide-react"
@@ -20,6 +22,7 @@ interface Product {
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
+  const [search, setSearch] = useState("")
 
   const fetchProducts = () => {
     fetch("/api/products")
@@ -166,12 +169,20 @@ export default function AdminProductsPage() {
     },
   }
 
+  const filteredProducts = useMemo(
+    () =>
+      products.filter((p) =>
+        matchesListSearch(search, [p.id, p.name, p.description, p.price, p.availability]),
+      ),
+    [products, search],
+  )
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Products Management</h1>
-          <p className="text-muted-foreground mt-1">Manage your product catalog</p>
+          <p className="mt-1 text-muted-foreground">Manage your product catalog</p>
         </div>
         <Button
           onClick={() => {
@@ -186,13 +197,15 @@ export default function AdminProductsPage() {
         </Button>
       </div>
 
+      <SearchBar onSearch={setSearch} placeholder="Search products by name, description, availability..." />
+
       <motion.div
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        {products.map((product) => (
+        {filteredProducts.map((product) => (
           <motion.div
             key={product.id}
             className="rounded-lg border bg-card overflow-hidden hover:shadow-lg transition-shadow"

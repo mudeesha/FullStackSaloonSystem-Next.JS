@@ -31,7 +31,8 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
-  if (pathname.startsWith("/staff") && role !== "STAFF" && role !== "ADMIN") {
+  if (pathname.startsWith("/staff") && role !== "STAFF") {
+    if (role === "ADMIN") return NextResponse.redirect(new URL("/admin/dashboard", req.url));
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 

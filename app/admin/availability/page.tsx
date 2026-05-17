@@ -3,7 +3,9 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
+import { SearchBar } from "@/components/search-bar"
+import { matchesListSearch } from "@/lib/list-search"
 import { useToast } from "@/hooks/use-toast"
 import { Edit } from "lucide-react"
 import { FormModal } from "@/components/form-modal"
@@ -21,6 +23,7 @@ type StaffSchedule = {
 export default function AdminAvailabilityPage() {
   const { toast } = useToast()
   const [staffList, setStaffList] = useState<StaffSchedule[]>([])
+  const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
   const [editModal, setEditModal] = useState<{ open: boolean; staffId?: number }>({ open: false })
   const [editSchedule, setEditSchedule] = useState<Record<string, DaySchedule>>({})
@@ -66,6 +69,11 @@ export default function AdminAvailabilityPage() {
     }
   }
 
+  const filteredStaff = useMemo(
+    () => staffList.filter((s) => matchesListSearch(search, [s.id, s.name, s.email])),
+    [staffList, search],
+  )
+
   if (loading) {
     return <p className="text-muted-foreground">Loading staff schedules...</p>
   }
@@ -73,15 +81,18 @@ export default function AdminAvailabilityPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold mb-2">Staff Availability</h2>
-        <p className="text-muted-foreground">View and manage staff schedules</p>
+        <h2 className="mb-2 text-3xl font-bold">Staff Availability</h2>
+        <p className="mb-4 text-muted-foreground">View and manage staff schedules</p>
+        <SearchBar onSearch={setSearch} placeholder="Search staff by name or email..." />
       </div>
 
       <div className="space-y-6">
-        {staffList.length === 0 ? (
-          <Card className="p-8 text-center text-muted-foreground">No staff members found.</Card>
+        {filteredStaff.length === 0 ? (
+          <Card className="p-8 text-center text-muted-foreground">
+            {search ? "No staff match your search." : "No staff members found."}
+          </Card>
         ) : (
-          staffList.map((staff) => (
+          filteredStaff.map((staff) => (
             <Card key={staff.id} className="p-6">
               <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                 <div>

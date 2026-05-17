@@ -52,10 +52,12 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: auth.error }, { status: auth.status })
       }
 
-      const where =
-        staffOnly && auth.session.role === "STAFF"
-          ? { appointment: { staffId: auth.session.id } }
-          : {}
+      const scopeToStaff =
+        auth.session.role === "STAFF" || staffOnly
+
+      const where = scopeToStaff
+        ? { appointment: { staffId: auth.session.id } }
+        : {}
 
       const reviews = await prisma.review.findMany({
         where,

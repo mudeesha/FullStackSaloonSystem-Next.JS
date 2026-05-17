@@ -26,6 +26,7 @@ export async function GET(request: Request) {
         email: true,
         phone: true,
         role: true,
+        profileImage: true,
         createdAt: true,
         staffServices: {
           include: { service: { select: { name: true } } },
@@ -41,6 +42,7 @@ export async function GET(request: Request) {
       phone: u.phone ?? "",
       role: u.role.toLowerCase(),
       joinDate: u.createdAt.toISOString().split("T")[0],
+      profileImage: u.profileImage,
       specialties: u.staffServices?.map((s) => s.service.name) ?? [],
     }))
 

@@ -4,8 +4,10 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useToast } from "@/hooks/use-toast"
+import { SearchBar } from "@/components/search-bar"
+import { matchesListSearch } from "@/lib/list-search"
 
 type Appointment = {
   id: number
@@ -20,6 +22,7 @@ type Appointment = {
 export default function HistoryPage() {
   const { toast } = useToast()
   const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [search, setSearch] = useState("")
   const [reviewForm, setReviewForm] = useState<{ appointmentId: number; rating: number; comment: string } | null>(null)
 
   const fetchAppointments = () => {
@@ -33,7 +36,12 @@ export default function HistoryPage() {
     fetchAppointments()
   }, [])
 
-  const completedAppointments = appointments.filter((a) => a.status === "completed")
+  const completedAppointments = useMemo(() => {
+    const completed = appointments.filter((a) => a.status === "completed")
+    return completed.filter((a) =>
+      matchesListSearch(search, [a.id, a.serviceName, a.staffName, a.date, a.time]),
+    )
+  }, [appointments, search])
 
   const submitReview = async () => {
     if (!reviewForm) return
@@ -62,19 +70,25 @@ export default function HistoryPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold mb-2">Booking History</h2>
-        <p className="text-muted-foreground">View past appointments and leave reviews</p>
+        <h2 className="mb-2 text-3xl font-bold">Booking History</h2>
+        <p className="mb-4 text-muted-foreground">View past appointments and leave reviews</p>
+        <SearchBar onSearch={setSearch} placeholder="Search by ID, service, staff, date..." />
       </div>
 
       <div className="space-y-4">
         {completedAppointments.length === 0 ? (
-          <Card className="p-8 text-center text-muted-foreground">No completed appointments yet.</Card>
+          <Card className="p-8 text-center text-muted-foreground">
+            {search ? "No appointments match your search." : "No completed appointments yet."}
+          </Card>
         ) : (
           completedAppointments.map((appointment) => (
             <Card key={appointment.id} className="p-6">
               <div className="flex items-start justify-between flex-wrap gap-4">
                 <div>
-                  <h3 className="font-semibold text-lg">{appointment.serviceName}</h3>
+                  <span className="mb-1 inline-block rounded-md bg-muted px-2 py-1 font-mono text-xs font-medium">
+                    Appointment #{appointment.id}
+                  </span>
+                  <h3 className="text-lg font-semibold">{appointment.serviceName}</h3>
                   <p className="text-sm text-muted-foreground mt-1">
                     {appointment.date} at {appointment.time}
                   </p>

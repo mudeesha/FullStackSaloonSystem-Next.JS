@@ -2,10 +2,12 @@
 
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { CheckCircle, X } from "lucide-react"
 import { ConfirmationModal } from "@/components/confirmation-modal"
+import { SearchBar } from "@/components/search-bar"
+import { matchesListSearch } from "@/lib/list-search"
 
 type Appointment = {
   id: number
@@ -21,6 +23,7 @@ type Appointment = {
 export default function StaffAppointmentsPage() {
   const { toast } = useToast()
   const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; type: "complete" | "cancel"; id: number }>({
     open: false,
@@ -31,7 +34,7 @@ export default function StaffAppointmentsPage() {
   const fetchAppointments = async () => {
     setLoading(true)
     try {
-      const res = await fetch("/api/appointments", { credentials: "include" })
+      const res = await fetch("/api/appointments?staff=true", { credentials: "include" })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to load")
       setAppointments(data.data ?? [])
@@ -76,22 +79,45 @@ export default function StaffAppointmentsPage() {
     setConfirmModal({ open: false, type: "complete", id: 0 })
   }
 
+  const filteredAppointments = useMemo(
+    () =>
+      appointments.filter((a) =>
+        matchesListSearch(search, [
+          a.id,
+          a.serviceName,
+          a.clientName,
+          a.clientEmail,
+          a.clientPhone,
+          a.status,
+          a.date,
+          a.time,
+        ]),
+      ),
+    [appointments, search],
+  )
+
   return (
     <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <div>
-        <h2 className="mb-2 text-3xl font-bold">Appointments</h2>
-        <p className="text-muted-foreground">Manage appointments assigned to you</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="mb-2 text-3xl font-bold">Appointments</h2>
+          <p className="text-muted-foreground">Manage appointments assigned to you</p>
+        </div>
+        <SearchBar
+          onSearch={setSearch}
+          placeholder="Search by ID, client, service, status..."
+        />
       </div>
 
       {loading ? (
         <p className="py-8 text-center text-muted-foreground">Loading appointments...</p>
-      ) : appointments.length === 0 ? (
+      ) : filteredAppointments.length === 0 ? (
         <div className="rounded-lg border bg-card p-8 text-center text-muted-foreground">
-          No appointments assigned to you yet.
+          {search ? "No appointments match your search." : "No appointments assigned to you yet."}
         </div>
       ) : (
         <div className="space-y-4">
-          {appointments.map((appointment) => (
+          {filteredAppointments.map((appointment) => (
             <motion.div
               key={appointment.id}
               className="rounded-lg border bg-card p-6 transition-shadow hover:shadow-lg"
@@ -100,7 +126,10 @@ export default function StaffAppointmentsPage() {
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="flex-1">
-                  <motion.div className="mb-2 flex flex-wrap items-center gap-4">
+                  <div className="mb-2 flex flex-wrap items-center gap-4">
+                    <span className="rounded-md bg-muted px-2 py-1 font-mono text-xs font-medium">
+                      #{appointment.id}
+                    </span>
                     <h3 className="text-lg font-semibold">{appointment.serviceName}</h3>
                     <span
                       className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
@@ -115,7 +144,7 @@ export default function StaffAppointmentsPage() {
                     >
                       {appointment.status}
                     </span>
-                  </motion.div>
+                  </div>
                   <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground md:grid-cols-4">
                     <div>
                       <p className="font-medium text-foreground">Date & Time</p>

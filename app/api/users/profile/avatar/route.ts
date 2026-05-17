@@ -14,9 +14,21 @@ export async function POST(request: Request) {
 
     const formData = await request.formData()
     const imageFile = formData.get("image") as File | null
+    const userIdParam = formData.get("userId")
 
     if (!imageFile || imageFile.size === 0) {
       return NextResponse.json({ error: "Image file is required" }, { status: 400 })
+    }
+
+    let targetUserId = auth.session.id
+    if (userIdParam) {
+      if (auth.session.role !== "ADMIN") {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      }
+      targetUserId = Number(userIdParam)
+      if (!Number.isFinite(targetUserId)) {
+        return NextResponse.json({ error: "Invalid user ID" }, { status: 400 })
+      }
     }
 
     const bytes = await imageFile.arrayBuffer()
@@ -34,7 +46,7 @@ export async function POST(request: Request) {
 
     const profileImage = `/uploads/profiles/${uniqueName}`
 
-    const current = await prisma.user.findUnique({ where: { id: auth.session.id } })
+    const current = await prisma.user.findUnique({ where: { id: targetUserId } })
     if (current?.profileImage?.startsWith("/uploads/profiles/")) {
       const oldPath = path.join(process.cwd(), "public", current.profileImage)
       try {
@@ -45,7 +57,7 @@ export async function POST(request: Request) {
     }
 
     const user = await prisma.user.update({
-      where: { id: auth.session.id },
+      where: { id: targetUserId },
       data: { profileImage },
       select: {
         id: true,

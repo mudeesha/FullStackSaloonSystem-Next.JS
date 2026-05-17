@@ -2,7 +2,9 @@
 
 import { PublicLayout } from "@/components/layout/public-layout"
 import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
+import { SearchBar } from "@/components/search-bar"
+import { matchesListSearch } from "@/lib/list-search"
 import Image from "next/image"
 import { ProductDetailModal } from "@/components/product-detail-modal"
 
@@ -19,7 +21,16 @@ type Product = {
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
+  const [search, setSearch] = useState("")
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+
+  const filteredProducts = useMemo(
+    () =>
+      products.filter((p) =>
+        matchesListSearch(search, [p.id, p.name, p.description, p.price, p.availability]),
+      ),
+    [products, search],
+  )
 
   useEffect(() => {
     fetch("/api/public/products")
@@ -33,15 +44,18 @@ export default function ProductsPage() {
       <section className="py-12 md:py-20">
         <div className="container px-4">
           <div className="mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">Our Products</h1>
-            <p className="text-lg text-muted-foreground">Premium salon products for home care</p>
+            <h1 className="mb-4 text-4xl font-bold md:text-5xl">Our Products</h1>
+            <p className="mb-6 text-lg text-muted-foreground">Premium salon products for home care</p>
+            <SearchBar onSearch={setSearch} placeholder="Search products..." />
           </div>
 
-          {products.length === 0 ? (
-            <p className="text-center text-muted-foreground py-12">No products available yet.</p>
+          {filteredProducts.length === 0 ? (
+            <p className="py-12 text-center text-muted-foreground">
+              {search ? "No products match your search." : "No products available yet."}
+            </p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.map((product) => (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredProducts.map((product) => (
                 <div
                   key={product.id}
                   className="rounded-lg border bg-card hover:shadow-lg transition-shadow overflow-hidden"

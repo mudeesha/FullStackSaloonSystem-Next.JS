@@ -27,11 +27,12 @@ export async function GET(request: Request) {
     const upcoming = searchParams.get("upcoming") === "true"
     const history = searchParams.get("history") === "true"
 
+    const staffScope = searchParams.get("staff") === "true"
     const where: Record<string, unknown> = {}
 
     if (auth.session.role === "CUSTOMER") {
       where.customerId = auth.session.id
-    } else if (auth.session.role === "STAFF") {
+    } else if (auth.session.role === "STAFF" || staffScope) {
       where.staffId = auth.session.id
     }
 

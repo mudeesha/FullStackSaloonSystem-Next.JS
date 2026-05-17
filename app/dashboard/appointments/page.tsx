@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import Link from "next/link"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { X, Star } from "lucide-react"
 import { ConfirmationModal } from "@/components/confirmation-modal"
+import { SearchBar } from "@/components/search-bar"
+import { matchesListSearch } from "@/lib/list-search"
 
 type Appointment = {
   id: number
@@ -23,6 +25,7 @@ type Appointment = {
 export default function AppointmentsPage() {
   const { toast } = useToast()
   const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; id: number }>({
     open: false,
@@ -110,36 +113,51 @@ export default function AppointmentsPage() {
   const canCancel = (status: string) => status === "pending" || status === "confirmed"
   const isCompleted = (status: string) => status === "completed"
 
+  const filteredAppointments = useMemo(
+    () =>
+      appointments.filter((a) =>
+        matchesListSearch(search, [a.id, a.serviceName, a.staffName, a.status, a.date, a.time]),
+      ),
+    [appointments, search],
+  )
+
   return (
     <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <motion.div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h2 className="text-3xl font-bold">My Appointments</h2>
           <p className="text-muted-foreground">View, cancel, or review your bookings</p>
         </div>
-        <Button className="bg-primary text-white hover:bg-[#B2223A]" asChild>
+        <Button className="shrink-0 bg-primary text-white hover:bg-[#B2223A]" asChild>
           <Link href="/book">Book New</Link>
         </Button>
-      </motion.div>
+      </div>
+
+      <SearchBar onSearch={setSearch} placeholder="Search by ID, service, staff, status..." />
 
       {loading ? (
         <p className="py-8 text-center text-muted-foreground">Loading appointments...</p>
-      ) : appointments.length === 0 ? (
+      ) : filteredAppointments.length === 0 ? (
         <div className="rounded-lg border bg-card p-8 text-center">
-          <p className="mb-4 text-muted-foreground">No appointments found.</p>
+          <p className="mb-4 text-muted-foreground">
+            {search ? "No appointments match your search." : "No appointments found."}
+          </p>
           <Button className="bg-primary text-white hover:bg-[#B2223A]" asChild>
             <Link href="/book">Book an Appointment</Link>
           </Button>
         </div>
       ) : (
         <div className="space-y-4">
-          {appointments.map((appointment) => (
+          {filteredAppointments.map((appointment) => (
             <div
               key={appointment.id}
               className="rounded-lg border bg-card p-6 transition-shadow hover:shadow-lg"
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
+                  <span className="mb-1 inline-block rounded-md bg-muted px-2 py-1 font-mono text-xs font-medium">
+                    Appointment #{appointment.id}
+                  </span>
                   <h3 className="text-lg font-semibold">{appointment.serviceName}</h3>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {appointment.date} at {appointment.time}

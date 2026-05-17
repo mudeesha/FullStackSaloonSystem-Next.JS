@@ -2,10 +2,12 @@
 
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { CheckCircle, X } from "lucide-react"
 import { ConfirmationModal } from "@/components/confirmation-modal"
+import { SearchBar } from "@/components/search-bar"
+import { matchesListSearch } from "@/lib/list-search"
 
 type Appointment = {
   id: number
@@ -28,6 +30,7 @@ export default function AdminAppointmentsPage() {
   const { toast } = useToast()
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [filter, setFilter] = useState("all")
+  const [search, setSearch] = useState("")
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; type: "confirm" | "cancel"; id: number }>({
     open: false,
     type: "confirm",
@@ -64,14 +67,32 @@ export default function AdminAppointmentsPage() {
     setConfirmModal({ open: false, type: "confirm", id: 0 })
   }
 
-  const filteredAppointments =
-    filter === "all" ? appointments : appointments.filter((a) => a.status === filter)
+  const filteredAppointments = useMemo(() => {
+    const byStatus = filter === "all" ? appointments : appointments.filter((a) => a.status === filter)
+    return byStatus.filter((a) =>
+      matchesListSearch(search, [
+        a.id,
+        a.serviceName,
+        a.clientName,
+        a.clientEmail,
+        a.staffName,
+        a.status,
+        a.date,
+        a.time,
+      ]),
+    )
+  }, [appointments, filter, search])
 
   return (
     <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div>
-        <h2 className="text-3xl font-bold mb-6">Appointments</h2>
-        <div className="flex gap-2 mb-6">
+        <h2 className="mb-4 text-3xl font-bold">Appointments</h2>
+        <SearchBar
+          onSearch={setSearch}
+          placeholder="Search by ID, client, staff, service, status..."
+          className="mb-4"
+        />
+        <div className="mb-6 flex flex-wrap gap-2">
           {["all", "confirmed", "completed", "pending"].map((status) => (
             <Button
               key={status}
@@ -90,9 +111,12 @@ export default function AdminAppointmentsPage() {
           <div key={appointment.id} className="p-6 rounded-lg border bg-card">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
-                <div className="flex items-center gap-4 mb-2">
+                <div className="mb-2 flex flex-wrap items-center gap-4">
+                  <span className="rounded-md bg-muted px-2 py-1 font-mono text-xs font-medium">
+                    #{appointment.id}
+                  </span>
                   <h3 className="text-lg font-semibold">{appointment.serviceName}</h3>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${statusClass(appointment.status)}`}>
+                  <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusClass(appointment.status)}`}>
                     {appointment.status}
                   </span>
                 </div>

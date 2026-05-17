@@ -48,6 +48,7 @@ type Product = {
 export default function Home() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [featuredServices, setFeaturedServices] = useState<FeaturedService[]>([])
+  const [servicesLoading, setServicesLoading] = useState(true)
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
   const [products, setProducts] = useState<Product[]>([])
@@ -78,6 +79,8 @@ export default function Home() {
         }
       } catch (e) {
         console.error("Failed to load home data", e)
+      } finally {
+        setServicesLoading(false)
       }
     }
     load()
@@ -148,17 +151,19 @@ export default function Home() {
             </p>
           </motion.div>
 
+          {servicesLoading ? (
+            <p className="text-center text-muted-foreground">Loading services...</p>
+          ) : featuredServices.length === 0 ? (
+            <p className="text-center text-muted-foreground">No services available yet.</p>
+          ) : (
           <motion.div
+            key={featuredServices.map((s) => s.id).join("-")}
             className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
             variants={containerVariants}
             initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
+            animate="visible"
           >
-            {featuredServices.length === 0 ? (
-              <p className="col-span-full text-center text-muted-foreground">Loading services...</p>
-            ) : (
-              featuredServices.map((service) => (
+              {featuredServices.map((service) => (
                 <motion.div
                   key={service.id}
                   className="flex flex-col overflow-hidden rounded-lg border border-secondary bg-card transition-shadow hover:shadow-lg dark:border-secondary/30"
@@ -187,9 +192,9 @@ export default function Home() {
                     </Button>
                   </div>
                 </motion.div>
-              ))
-            )}
+              ))}
           </motion.div>
+          )}
 
           <div className="text-center mt-12">
             <Button className="bg-primary hover:bg-[#B2223A] text-white" asChild>
