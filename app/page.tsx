@@ -439,12 +439,17 @@ export default function Home() {
               <div className="h-px w-12 bg-primary"></div>
             </div>
             <h2 className="font-serif text-4xl md:text-5xl font-bold mb-6">Ready to Transform?</h2>
+            <div className="flex justify-center mb-6">
+              <div className="h-px w-16 bg-primary"></div>
+              <div className="mx-4 text-primary">✦</div>
+              <div className="h-px w-16 bg-primary"></div>
+            </div>
             <p className="text-lg text-foreground/70 mb-8">
               Book your appointment today and experience the difference
             </p>
-            <Button size="lg" className="bg-primary hover:bg-accent text-white font-medium px-8" asChild>
-              <Link href="/book">Book Your Appointment</Link>
-            </Button>
+            <button className="bg-primary hover:bg-accent text-black font-medium px-8 py-3 rounded-lg transition-colors inline-flex items-center gap-2">
+              📅 Book Your Appointment
+            </button>
           </motion.div>
         </div>
       </section>
