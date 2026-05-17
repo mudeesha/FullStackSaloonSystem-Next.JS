@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Menu, X, LogOut, LayoutDashboard, User } from "lucide-react"
 import { useState } from "react"
@@ -22,11 +21,10 @@ export function Header() {
   const isActive = (path: string) => pathname === path
 
   const navLinks = [
-    { href: "/", label: "Home" },
-    { href: "/services", label: "Services" },
-    { href: "/products", label: "Products" },
-    { href: "/about", label: "About" },
-    { href: "/contact", label: "Contact" },
+    { href: "/", label: "HOME" },
+    { href: "/services", label: "SERVICES" },
+    { href: "/gallery", label: "GALLERY" },
+    { href: "/contact", label: "CONTACT" },
   ]
 
   const accountLinks = isLoggedIn
@@ -47,8 +45,9 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 w-full bg-[#1a1a1a] border-b border-border">
+      <div className="mx-auto flex h-16 max-w-full items-center justify-between px-6 lg:px-12">
+        {/* Logo */}
         <Link href="/" className="flex shrink-0 items-center">
           <Image
             src="/logo.png"
@@ -60,13 +59,14 @@ export function Header() {
           />
         </Link>
 
-        <nav className="hidden items-center gap-8 md:flex">
+        {/* Center Navigation */}
+        <nav className="hidden items-center gap-12 absolute left-1/2 transform -translate-x-1/2 md:flex">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={`text-sm font-medium tracking-wide transition-colors ${
-                isActive(link.href) ? "text-primary border-b-2 border-primary pb-2" : "text-foreground hover:text-primary"
+              className={`text-xs font-medium tracking-widest transition-colors ${
+                isActive(link.href) ? "text-primary border-b border-primary pb-1" : "text-white/80 hover:text-primary"
               }`}
             >
               {link.label}
@@ -74,26 +74,26 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2 sm:gap-3">
-          <ThemeToggle />
-
+        {/* Right Side: Auth + CTA */}
+        <div className="flex items-center gap-4">
           {!loading && !isLoggedIn && (
-            <div className="hidden items-center gap-2 md:flex">
-              <Button variant="ghost" asChild size="sm">
+            <div className="hidden items-center gap-3 md:flex">
+              <Button variant="ghost" asChild size="sm" className="text-white/80 hover:text-white text-xs font-medium">
                 <Link href="/login">Login</Link>
               </Button>
-              <Button className="bg-primary text-white hover:bg-[#B2223A]" asChild size="sm">
-                <Link href="/register">Register</Link>
+              <span className="text-white/30">|</span>
+              <Button variant="ghost" asChild size="sm" className="text-white/80 hover:text-white text-xs font-medium">
+                <Link href="/register">Sign Up</Link>
               </Button>
             </div>
           )}
 
           {!loading && isLoggedIn && (
-            <div className="relative">
+            <div className="relative hidden md:block">
               <Button
                 variant="outline"
                 size="icon"
-                className="h-10 w-10 shrink-0"
+                className="h-10 w-10 shrink-0 border-white/30 text-white hover:bg-white/10"
                 aria-label="Account menu"
                 aria-expanded={accountMenuOpen}
                 onClick={() => setAccountMenuOpen((open) => !open)}
@@ -109,15 +109,15 @@ export function Header() {
                     aria-label="Close menu"
                     onClick={() => setAccountMenuOpen(false)}
                   />
-                  <div className="absolute right-0 z-50 mt-2 w-52 rounded-lg border bg-background py-1 shadow-lg">
-                    <p className="border-b px-4 py-2 text-xs text-muted-foreground truncate">{user?.name}</p>
+                  <div className="absolute right-0 z-50 mt-2 w-52 rounded-lg border border-border bg-[#1a1a1a] py-1 shadow-lg">
+                    <p className="border-b border-border px-4 py-2 text-xs text-white/60 truncate">{user?.name}</p>
                     {accountLinks.map((link) => {
                       const Icon = link.icon
                       return (
                         <Link
                           key={link.href}
                           href={link.href}
-                          className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-accent"
+                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-white/80 hover:text-white hover:bg-white/5"
                           onClick={closeMenus}
                         >
                           <Icon className="h-4 w-4" />
@@ -128,7 +128,7 @@ export function Header() {
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-destructive hover:bg-accent"
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-destructive hover:bg-white/5"
                     >
                       <LogOut className="h-4 w-4" />
                       Logout
@@ -139,10 +139,14 @@ export function Header() {
             </div>
           )}
 
+          <Button className="hidden md:flex bg-primary hover:bg-accent text-white font-medium text-xs tracking-wide px-6" asChild>
+            <Link href="/book">BOOK NOW</Link>
+          </Button>
+
           <Button
             variant="outline"
             size="icon"
-            className="h-10 w-10 md:hidden"
+            className="h-10 w-10 md:hidden border-white/30 text-white hover:bg-white/10"
             aria-label="Navigation menu"
             onClick={() => setMobileNavOpen((open) => !open)}
           >
@@ -152,14 +156,14 @@ export function Header() {
       </div>
 
       {mobileNavOpen && (
-        <div className="border-t bg-background px-4 py-4 md:hidden">
-          <nav className="space-y-1">
+        <div className="border-t border-border bg-[#1a1a1a] px-4 py-4 md:hidden">
+          <nav className="space-y-2 mb-4">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className={`block rounded-md px-3 py-2 text-sm font-medium ${
-                  isActive(link.href) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent"
+                  isActive(link.href) ? "bg-primary/10 text-primary" : "text-white/70 hover:text-white"
                 }`}
                 onClick={closeMenus}
               >
@@ -169,15 +173,20 @@ export function Header() {
           </nav>
 
           {!loading && !isLoggedIn && (
-            <div className="mt-4 flex gap-2 border-t pt-4">
-              <Button variant="outline" asChild className="flex-1">
+            <div className="flex flex-col gap-2 border-t border-border pt-4">
+              <Button variant="outline" asChild className="text-white border-white/30 hover:bg-white/10">
                 <Link href="/login" onClick={closeMenus}>
                   Login
                 </Link>
               </Button>
-              <Button className="flex-1 bg-primary text-white hover:bg-[#B2223A]" asChild>
+              <Button className="bg-primary hover:bg-accent text-white" asChild>
                 <Link href="/register" onClick={closeMenus}>
-                  Register
+                  Sign Up
+                </Link>
+              </Button>
+              <Button className="bg-primary hover:bg-accent text-white" asChild>
+                <Link href="/book" onClick={closeMenus}>
+                  Book Now
                 </Link>
               </Button>
             </div>
