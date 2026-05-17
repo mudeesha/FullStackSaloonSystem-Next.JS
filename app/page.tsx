@@ -4,7 +4,7 @@ import { PublicLayout } from "@/components/layout/public-layout"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Star } from "lucide-react"
+import { Star, ChevronLeft, ChevronRight } from "lucide-react"
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import { ProductDetailModal } from "@/components/product-detail-modal"
@@ -363,29 +363,69 @@ export default function Home() {
             <p className="text-foreground/70 max-w-2xl mx-auto text-base md:text-lg">Real experiences from our satisfied customers</p>
           </motion.div>
 
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-3 gap-6"
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
-            {testimonials.map((testimonial) => (
-              <motion.div
-                key={testimonial.id}
-                className="p-6 rounded-xl border border-border bg-card transition-all hover:border-primary hover:shadow-lg"
-                variants={itemVariants}
-              >
-                <div className="flex gap-1 mb-4">
-                  {Array.from({ length: testimonial.rating }).map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-primary text-primary" />
-                  ))}
-                </div>
-                <p className="text-foreground/70 mb-4 italic">"{testimonial.text}"</p>
-                <p className="font-semibold text-foreground">{testimonial.name}</p>
-              </motion.div>
+          {/* Testimonials Carousel Container */}
+          <div className="flex items-center justify-center gap-4 md:gap-8 mb-8">
+            {/* Left Arrow */}
+            <button className="hidden md:flex h-10 w-10 items-center justify-center rounded-full border border-primary text-primary hover:bg-primary hover:text-white transition-all flex-shrink-0">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+
+            {/* Testimonials Grid */}
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1 max-w-5xl"
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+            >
+              {testimonials.slice(0, 3).map((testimonial) => (
+                <motion.div
+                  key={testimonial.id}
+                  className="p-6 rounded-xl border border-border bg-card transition-all hover:border-primary hover:shadow-lg"
+                  variants={itemVariants}
+                >
+                  <div className="flex gap-1 mb-4">
+                    {Array.from({ length: testimonial.rating }).map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-primary text-primary" />
+                    ))}
+                  </div>
+                  <p className="text-foreground/70 mb-4 italic">"{testimonial.text}"</p>
+                  <div className="flex items-center gap-3">
+                    {testimonial.clientImage && (
+                      <Image
+                        src={testimonial.clientImage}
+                        alt={testimonial.name}
+                        width={40}
+                        height={40}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    )}
+                    <div>
+                      <p className="font-semibold text-foreground">{testimonial.name}</p>
+                      <p className="text-xs text-foreground/50">{testimonial.status || "Client"}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            {/* Right Arrow */}
+            <button className="hidden md:flex h-10 w-10 items-center justify-center rounded-full border border-primary text-primary hover:bg-primary hover:text-white transition-all flex-shrink-0">
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Pagination Dots */}
+          <div className="flex justify-center gap-2">
+            {[0, 1, 2].map((i) => (
+              <button
+                key={i}
+                className={`h-2 rounded-full transition-all ${
+                  i === 0 ? "w-2 bg-primary" : "w-2 bg-primary/30 hover:bg-primary/50"
+                }`}
+              />
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
