@@ -2,6 +2,7 @@
   "name": "salon-management",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@9.0.0",
   "scripts": {
     "build": "next build",
     "dev": "next dev",
@@ -61,7 +62,7 @@
     "postcss": "^8.5",
     "prisma": "^6.17.1",
     "tailwindcss": "^4.1.9",
-    "tsx": "^4.20.6",
+    "tsx": "^4.22.0",
     "typescript": "^5"
   }
 }
