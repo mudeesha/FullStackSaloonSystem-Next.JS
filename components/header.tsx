@@ -47,7 +47,7 @@ export function Header() {
 
 return (
   <header className="sticky top-0 z-50 w-full border-b border-primary/10 bg-[#fbf5ec]/95 shadow-[0_4px_24px_rgba(82,54,24,0.04)] backdrop-blur dark:bg-[#0d0b08]/95">
-    <div className="mx-auto flex h-[95px] max-w-full items-center px-8 lg:px-16">
+    <div className="mx-auto flex h-[80px] max-w-full items-center px-8 lg:px-16">
       {/* Logo */}
       <Link href="/" className="flex shrink-0 items-center">
         <Image
@@ -89,19 +89,17 @@ return (
             </div>
 
             {!loading && !isLoggedIn && (
-              <div className="flex h-full items-center gap-6">
+              <div className="flex h-full items-center gap-4">
                 <Link
                   href="/login"
-                  className="flex h-full items-center text-[13px] font-semibold uppercase tracking-[0.22em] text-[#3f3026]/65 transition-colors hover:text-primary dark:text-[#f3eadf]/70 dark:hover:text-primary"
+                  className="rounded-lg border-primary/70 bg-background/40 px-2 py-1.5 text-sm font-bold uppercase tracking-[0.22em] text-primary backdrop-blur hover:bg-primary/10 outline-2"
                 >
                   Login
                 </Link>
 
-                <span className="h-4 w-px bg-primary/25" />
-
                 <Link
                   href="/register"
-                  className="flex h-full items-center text-[13px] font-semibold uppercase tracking-[0.22em] text-[#3f3026]/65 transition-colors hover:text-primary dark:text-[#f3eadf]/70 dark:hover:text-primary"
+                  className="rounded-lg border-primary/70 bg-background/40 px-2 py-1.5 text-sm font-bold uppercase tracking-[0.22em] text-primary backdrop-blur hover:bg-primary/10 outline-2"
                 >
                   Sign Up
                 </Link>
@@ -169,12 +167,12 @@ return (
               </div>
             )}
 
-            <Link
+            {/* <Link
               href="/book"
-              className="flex h-[52px] items-center justify-center rounded-md bg-primary px-9 text-[15px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_10px_24px_rgba(184,134,11,0.18)] transition-colors hover:bg-[#a8792b]"
+              className="flex h-[45px] items-center justify-center rounded-md bg-primary px-9 text-[15px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_10px_24px_rgba(184,134,11,0.18)] transition-colors hover:bg-[#a8792b]"
             >
               Book Now
-            </Link>
+            </Link> */}
           </div>
         </div>
       </div>
