@@ -60,7 +60,7 @@ return (
         />
       </Link>
 
-      {/* Desktop Navigation + Actions */}
+      {/* Desktop Navigation + Action */}
       <div className="ml-auto hidden h-full items-center md:flex">
         <div className="flex h-full items-center gap-12 xl:gap-16">
           <nav className="flex h-full items-center gap-12 xl:gap-16">
