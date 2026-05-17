@@ -56,17 +56,17 @@ export default function ContactPage() {
     {
       icon: Phone,
       title: "Phone",
-      value: "(555) 123-4567",
+      value: "(+94) 77 449 5349",
     },
     {
       icon: Mail,
       title: "Email",
-      value: "info@salon.com",
+      value: "nssalonbatapola@gmail.com",
     },
     {
       icon: MapPin,
       title: "Address",
-      value: "123 Beauty Street, New York, NY 10001",
+      value: "Manampita Road, Batapola 80320",
     },
     {
       icon: Clock,

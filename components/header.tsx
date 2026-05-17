@@ -45,157 +45,201 @@ export function Header() {
     await logout()
   }
 
-  return (
-    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
-      <div className="mx-auto flex h-16 max-w-full items-center justify-between px-6 lg:px-12">
-        {/* Logo */}
-        <Link href="/" className="flex shrink-0 items-center">
-          <Image
-            src="/logo.png"
-            alt="NS Salon & Bridal Logo"
-            width={200}
-            height={50}
-            className="h-12 w-auto"
-            priority
-          />
-        </Link>
+return (
+  <header className="sticky top-0 z-50 w-full border-b border-primary/10 bg-[#fbf5ec]/95 shadow-[0_4px_24px_rgba(82,54,24,0.04)] backdrop-blur dark:bg-[#0d0b08]/95">
+    <div className="mx-auto flex h-[112px] max-w-full items-center px-8 lg:px-16">
+      {/* Logo */}
+      <Link href="/" className="flex shrink-0 items-center">
+        <Image
+          src="/logo.png"
+          alt="NS Salon & Bridal Logo"
+          width={290}
+          height={76}
+          className="h-[66px] w-auto object-contain"
+          priority
+        />
+      </Link>
 
-        {/* Center Navigation */}
-        <nav className="hidden items-center gap-12 absolute left-1/2 transform -translate-x-1/2 md:flex">
+      {/* Desktop Navigation + Actions */}
+      <div className="ml-auto hidden h-full items-center md:flex">
+        <div className="flex h-full items-center gap-12 xl:gap-16">
+          <nav className="flex h-full items-center gap-12 xl:gap-16">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`relative flex h-full items-center text-[15px] font-semibold uppercase tracking-[0.32em] transition-colors ${
+                  isActive(link.href)
+                    ? "text-[#2e2118] dark:text-[#f8efe4]"
+                    : "text-[#3f3026]/80 hover:text-primary dark:text-[#f3eadf]/75 dark:hover:text-primary"
+                }`}
+              >
+                {link.label}
+
+                {isActive(link.href) && (
+                  <span className="absolute bottom-[32px] left-0 h-px w-full bg-primary" />
+                )}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="flex h-full items-center gap-7">
+            <div className="flex h-full items-center">
+              <ThemeToggle />
+            </div>
+
+            {!loading && !isLoggedIn && (
+              <div className="flex h-full items-center gap-6">
+                <Link
+                  href="/login"
+                  className="flex h-full items-center text-[13px] font-semibold uppercase tracking-[0.22em] text-[#3f3026]/65 transition-colors hover:text-primary dark:text-[#f3eadf]/70 dark:hover:text-primary"
+                >
+                  Login
+                </Link>
+
+                <span className="h-4 w-px bg-primary/25" />
+
+                <Link
+                  href="/register"
+                  className="flex h-full items-center text-[13px] font-semibold uppercase tracking-[0.22em] text-[#3f3026]/65 transition-colors hover:text-primary dark:text-[#f3eadf]/70 dark:hover:text-primary"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
+
+            {!loading && isLoggedIn && (
+              <div className="relative flex h-full items-center">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-11 w-11 shrink-0 border-primary/30 bg-transparent text-primary hover:bg-primary/10"
+                  aria-label="Account menu"
+                  aria-expanded={accountMenuOpen}
+                  onClick={() => setAccountMenuOpen((open) => !open)}
+                >
+                  {accountMenuOpen ? (
+                    <X className="h-5 w-5" />
+                  ) : (
+                    <Menu className="h-5 w-5" />
+                  )}
+                </Button>
+
+                {accountMenuOpen && (
+                  <>
+                    <button
+                      type="button"
+                      className="fixed inset-0 z-40"
+                      aria-label="Close menu"
+                      onClick={() => setAccountMenuOpen(false)}
+                    />
+
+                    <div className="absolute right-0 top-[76px] z-50 w-52 rounded-xl border border-primary/20 bg-card py-1 shadow-xl">
+                      <p className="truncate border-b border-primary/15 px-4 py-2 text-xs text-muted-foreground">
+                        {user?.name}
+                      </p>
+
+                      {accountLinks.map((link) => {
+                        const Icon = link.icon
+
+                        return (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                            className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-primary/10"
+                            onClick={closeMenus}
+                          >
+                            <Icon className="h-4 w-4" />
+                            {link.label}
+                          </Link>
+                        )
+                      })}
+
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-destructive hover:bg-primary/10"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Logout
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            <Link
+              href="/book"
+              className="flex h-[52px] items-center justify-center rounded-md bg-primary px-9 text-[15px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_10px_24px_rgba(184,134,11,0.18)] transition-colors hover:bg-[#a8792b]"
+            >
+              Book Now
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile menu button */}
+      <Button
+        variant="outline"
+        size="icon"
+        className="ml-auto h-11 w-11 border-primary/35 text-primary md:hidden"
+        aria-label="Navigation menu"
+        onClick={() => setMobileNavOpen((open) => !open)}
+      >
+        {mobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+      </Button>
+    </div>
+
+    {mobileNavOpen && (
+      <div className="border-t border-primary/15 bg-[#fbf5ec] px-4 py-4 dark:bg-[#0d0b08] md:hidden">
+        <nav className="mb-4 space-y-2">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={`text-xs font-medium tracking-widest transition-colors ${
-                isActive(link.href) ? "text-primary border-b border-primary pb-1" : "text-foreground/70 hover:text-primary"
+              className={`block rounded-md px-3 py-3 text-sm font-semibold uppercase tracking-widest ${
+                isActive(link.href)
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-primary"
               }`}
+              onClick={closeMenus}
             >
               {link.label}
             </Link>
           ))}
         </nav>
 
-        {/* Right Side: Auth + CTA */}
-        <div className="flex items-center gap-4">
-          <ThemeToggle />
+        <div className="flex flex-col gap-2 border-t border-primary/15 pt-4">
+          <div className="flex items-center justify-between py-2">
+            <span className="text-sm text-muted-foreground">Theme</span>
+            <ThemeToggle />
+          </div>
 
           {!loading && !isLoggedIn && (
-            <div className="hidden items-center gap-3 md:flex">
-              <Button variant="ghost" asChild size="sm" className="text-foreground/70 hover:text-foreground text-xs font-medium">
-                <Link href="/login">Login</Link>
-              </Button>
-              <span className="text-border">|</span>
-              <Button variant="ghost" asChild size="sm" className="text-foreground/70 hover:text-foreground text-xs font-medium">
-                <Link href="/register">Sign Up</Link>
-              </Button>
-            </div>
-          )}
-
-          {!loading && isLoggedIn && (
-            <div className="relative hidden md:block">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 shrink-0"
-                aria-label="Account menu"
-                aria-expanded={accountMenuOpen}
-                onClick={() => setAccountMenuOpen((open) => !open)}
-              >
-                {accountMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </Button>
-
-              {accountMenuOpen && (
-                <>
-                  <button
-                    type="button"
-                    className="fixed inset-0 z-40"
-                    aria-label="Close menu"
-                    onClick={() => setAccountMenuOpen(false)}
-                  />
-                  <div className="absolute right-0 z-50 mt-2 w-52 rounded-lg border border-border bg-card py-1 shadow-lg">
-                    <p className="border-b border-border px-4 py-2 text-xs text-muted-foreground truncate">{user?.name}</p>
-                    {accountLinks.map((link) => {
-                      const Icon = link.icon
-                      return (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-accent"
-                          onClick={closeMenus}
-                        >
-                          <Icon className="h-4 w-4" />
-                          {link.label}
-                        </Link>
-                      )
-                    })}
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-destructive hover:bg-accent"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      Logout
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          <Button className="hidden md:flex bg-primary hover:bg-accent text-white font-medium text-xs tracking-wide px-6" asChild>
-            <Link href="/book">BOOK NOW</Link>
-          </Button>
-
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-10 w-10 md:hidden"
-            aria-label="Navigation menu"
-            onClick={() => setMobileNavOpen((open) => !open)}
-          >
-            {mobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
-        </div>
-      </div>
-
-      {mobileNavOpen && (
-        <div className="border-t border-border bg-background px-4 py-4 md:hidden">
-          <nav className="space-y-2 mb-4">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`block rounded-md px-3 py-2 text-sm font-medium ${
-                  isActive(link.href) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"
-                }`}
-                onClick={closeMenus}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-
-          {!loading && !isLoggedIn && (
-            <div className="flex flex-col gap-2 border-t border-border pt-4">
+            <>
               <Button variant="outline" asChild>
                 <Link href="/login" onClick={closeMenus}>
                   Login
                 </Link>
               </Button>
-              <Button className="bg-primary hover:bg-accent text-white" asChild>
+
+              <Button className="bg-primary text-white hover:bg-[#a8792b]" asChild>
                 <Link href="/register" onClick={closeMenus}>
                   Sign Up
                 </Link>
               </Button>
-              <Button className="bg-primary hover:bg-accent text-white" asChild>
-                <Link href="/book" onClick={closeMenus}>
-                  Book Now
-                </Link>
-              </Button>
-            </div>
+            </>
           )}
+
+          <Button className="bg-primary text-white hover:bg-[#a8792b]" asChild>
+            <Link href="/book" onClick={closeMenus}>
+              Book Now
+            </Link>
+          </Button>
         </div>
-      )}
-    </header>
-  )
+      </div>
+    )}
+  </header>
+)
 }

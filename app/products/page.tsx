@@ -46,7 +46,7 @@ export default function ProductsPage() {
           <div className="mb-12">
             <h1 className="mb-4 text-4xl font-bold md:text-5xl">Our Products</h1>
             <p className="mb-6 text-lg text-muted-foreground max-w-3xl">
-              Discover the finest selection of beauty products at Liyo Salon, carefully curated to ensure you achieve salon-quality results at home. Our range includes top-tier brands and exclusive items that cater to all your hair, skin, and beauty needs.
+              Discover the finest selection of beauty products at NS Salon, carefully curated to ensure you achieve salon-quality results at home. Our range includes top-tier brands and exclusive items that cater to all your hair, skin, and beauty needs.
             </p>
             <div className="w-full max-w-sm">
               <SearchBar onSearch={setSearch} placeholder="Search products..." />

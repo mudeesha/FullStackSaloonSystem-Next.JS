@@ -101,7 +101,7 @@ export default function RegisterPage() {
                 <label className="block text-sm font-medium mb-2">Phone</label>
                 <Input
                   {...register("phone")}
-                  placeholder="(555) 123-4567"
+                  placeholder="(+94) 77 449 5349"
                   className={errors.phone ? "border-red-500" : ""}
                 />
                 {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>}

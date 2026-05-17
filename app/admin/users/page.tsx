@@ -309,7 +309,7 @@ export default function AdminUsersPage() {
             <Input
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              placeholder="(555) 123-4567"
+              placeholder="(+94) 77 449 5349"
             />
           </div>
           <div>
