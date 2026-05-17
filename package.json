@@ -35,7 +35,7 @@
     "jose": "^6.1.0",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.454.0",
-    "next": "15.2.4",
+    "next": "15.2.8",
     "next-connect": "^1.0.0",
     "next-themes": "latest",
     "react": "^19",
@@ -61,7 +61,6 @@
     "postcss": "^8.5",
     "prisma": "^6.17.1",
     "tailwindcss": "^4.1.9",
-    "tsx": "^4.22.0",
     "tsx": "^4.20.6",
     "typescript": "^5"
   }
