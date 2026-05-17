@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Menu, X, LogOut, LayoutDashboard, User } from "lucide-react"
 import { useState } from "react"
 import { useAuth } from "@/hooks/use-auth"
+import Image from "next/image"
 
 export function Header() {
   const pathname = usePathname()
@@ -48,9 +49,14 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex shrink-0 items-center gap-2 text-xl font-bold">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white">S</div>
-          <span>Salon</span>
+        <Link href="/" className="flex shrink-0 items-center">
+          <Image
+            src="/salon-logo.png"
+            alt="Salon & Bridal Logo"
+            width={140}
+            height={40}
+            className="h-10 w-auto"
+          />
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex lg:gap-8">

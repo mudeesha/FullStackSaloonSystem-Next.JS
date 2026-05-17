@@ -45,8 +45,12 @@ export default function ProductsPage() {
         <div className="container px-4">
           <div className="mb-12">
             <h1 className="mb-4 text-4xl font-bold md:text-5xl">Our Products</h1>
-            <p className="mb-6 text-lg text-muted-foreground">Premium salon products for home care</p>
-            <SearchBar onSearch={setSearch} placeholder="Search products..." />
+            <p className="mb-6 text-lg text-muted-foreground max-w-3xl">
+              Discover the finest selection of beauty products at Liyo Salon, carefully curated to ensure you achieve salon-quality results at home. Our range includes top-tier brands and exclusive items that cater to all your hair, skin, and beauty needs.
+            </p>
+            <div className="w-full max-w-sm">
+              <SearchBar onSearch={setSearch} placeholder="Search products..." />
+            </div>
           </div>
 
           {filteredProducts.length === 0 ? (
@@ -54,11 +58,11 @@ export default function ProductsPage() {
               {search ? "No products match your search." : "No products available yet."}
             </p>
           ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {filteredProducts.map((product) => (
                 <div
                   key={product.id}
-                  className="rounded-lg border bg-card hover:shadow-lg transition-shadow overflow-hidden"
+                  className="rounded-lg border bg-card hover:shadow-lg transition-shadow overflow-hidden flex flex-col h-full"
                 >
                   <div className="relative w-full h-48 bg-muted">
                     <Image
@@ -68,17 +72,17 @@ export default function ProductsPage() {
                       className="object-cover"
                     />
                   </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold mb-1">{product.name}</h3>
-                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{product.description}</p>
-                    <div className="flex items-center justify-between mb-3">
+                  <div className="p-6 flex flex-col flex-grow">
+                    <h3 className="font-semibold mb-2 text-lg">{product.name}</h3>
+                    <p className="text-sm text-muted-foreground mb-3 flex-grow line-clamp-2">{product.description}</p>
+                    <div className="flex items-center justify-between mb-4">
                       <p className="text-lg font-bold text-primary">${product.price}</p>
                       <p className="text-xs font-semibold text-green-600">{product.availability}</p>
                     </div>
                     <Button
                       onClick={() => setSelectedProduct(product)}
                       size="sm"
-                      className="w-full bg-primary hover:bg-[#B2223A] text-white"
+                      className="w-full bg-primary hover:bg-[#B2223A] text-white mt-auto"
                     >
                       Show Details
                     </Button>
